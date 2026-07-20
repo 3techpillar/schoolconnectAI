@@ -1,0 +1,146 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
+  --radius-3xl: 32px;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Sora", "Inter", sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-whatsapp: var(--whatsapp);
+  --color-whatsapp-foreground: var(--whatsapp-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+
+  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 4px 12px rgb(15 23 42 / 0.04);
+  --shadow-card: 0 2px 6px rgb(15 23 42 / 0.04), 0 12px 32px -8px rgb(15 23 42 / 0.08);
+  --shadow-pop: 0 4px 14px rgb(37 99 235 / 0.15), 0 20px 40px -12px rgb(124 58 237 / 0.25);
+}
+
+:root {
+  --radius: 1.25rem;
+
+  /* SchoolSetu reference palette */
+  --background: #F7F9FD;        /* paper */
+  --foreground: #0F172A;        /* ink */
+  --surface: #FFFFFF;
+  --surface-2: #EFF4FE;         /* blue-tint */
+
+  --card: #FFFFFF;
+  --card-foreground: #0F172A;
+  --popover: #FFFFFF;
+  --popover-foreground: #0F172A;
+
+  --primary: #2563EB;           /* royal blue */
+  --primary-foreground: #FFFFFF;
+  --secondary: #7C3AED;         /* violet */
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #EFF4FE;
+  --muted-foreground: #5B6779;  /* slate */
+  --accent: #DBEAFE;            /* blue-light */
+  --accent-foreground: #1E3A8A; /* blue-dark */
+
+  --success: #16A34A;
+  --success-foreground: #FFFFFF;
+  --warning: #F59E0B;           /* amber */
+  --warning-foreground: #FFFFFF;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --info: #2563EB;
+  --info-foreground: #FFFFFF;
+  --whatsapp: #25D366;
+  --whatsapp-foreground: #FFFFFF;
+
+  --border: #E4E9F2;            /* line */
+  --input: #E4E9F2;
+  --ring: #2563EB;
+
+  --gradient-primary: linear-gradient(145deg, #2563EB, #1E3A8A);
+  --gradient-success: linear-gradient(135deg, #16A34A, #22C55E);
+  --gradient-notify: linear-gradient(135deg, #F59E0B, #EF4444);
+  --gradient-hero: linear-gradient(160deg, #2563EB 0%, #1E3A8A 60%, #152A63 100%);
+
+  /* Royal Blue spacing tokens */
+  --space-page: 1rem;           /* 16px container horizontal gutter */
+  --space-section: 0.75rem;     /* 12px content top margin */
+  --space-header: 0.75rem;      /* 12px header bottom padding */
+  --space-card-gap: 0.75rem;    /* 12px gap between cards */
+}
+
+.dark {
+  --background: oklch(0.16 0.03 264);
+  --foreground: oklch(0.98 0.005 250);
+  --surface: oklch(0.21 0.04 265);
+  --surface-2: oklch(0.25 0.04 265);
+  --card: oklch(0.21 0.04 265);
+  --card-foreground: oklch(0.98 0.005 250);
+  --popover: oklch(0.21 0.04 265);
+  --popover-foreground: oklch(0.98 0.005 250);
+  --primary: oklch(0.68 0.18 265);
+  --primary-foreground: oklch(0.12 0.03 264);
+  --secondary: oklch(0.65 0.22 295);
+  --secondary-foreground: oklch(0.99 0 0);
+  --muted: oklch(0.27 0.04 260);
+  --muted-foreground: oklch(0.72 0.03 256);
+  --accent: oklch(0.3 0.06 265);
+  --accent-foreground: oklch(0.95 0.02 265);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.65 0.18 265);
+}
+
+@layer base {
+  * { border-color: var(--color-border); }
+  html, body { background-color: var(--color-background); color: var(--color-foreground); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+  h1, h2, h3, h4 { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@utility bg-gradient-primary { background-image: var(--gradient-primary); }
+@utility bg-gradient-success { background-image: var(--gradient-success); }
+@utility bg-gradient-notify { background-image: var(--gradient-notify); }
+@utility bg-gradient-hero { background-image: var(--gradient-hero); }
+@utility shadow-soft { box-shadow: var(--shadow-soft); }
+@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility shadow-pop { box-shadow: var(--shadow-pop); }
+
+@utility safe-bottom { padding-bottom: 0.75rem; padding-bottom: calc(env(safe-area-inset-bottom) + 0.75rem); }
+@utility safe-top { padding-top: 1.25rem; padding-top: calc(env(safe-area-inset-top) + 1.25rem); }
+@utility safe-bottom-main { padding-bottom: 7rem; padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
+
+@utility page-x { padding-left: var(--space-page); padding-right: var(--space-page); }
+@utility page-top { padding-top: var(--space-section); }
+@utility header-bottom { padding-bottom: var(--space-header); }
