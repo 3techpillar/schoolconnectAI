@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/lib/auth";
+import { AdminDataProvider } from "@/lib/admin-data";
+import { SchoolDataProvider } from "@/lib/school-data";
+import { StudentEngageProvider } from "@/lib/student-engage";
+import { TeacherClassProvider } from "@/lib/teacher-class";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SchoolConnect AI — WhatsApp-first School Communication",
   description:
-    "Stay connected to your child's school. Attendance, homework, fees, circulars and an AI assistant.",
+    "Stay connected to your child's school. Teachers, parents and students in one app.",
 };
 
 export const viewport: Viewport = {
@@ -33,7 +37,15 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <SchoolDataProvider>
+            <TeacherClassProvider>
+              <StudentEngageProvider>
+                <AdminDataProvider>{children}</AdminDataProvider>
+              </StudentEngageProvider>
+            </TeacherClassProvider>
+          </SchoolDataProvider>
+        </AuthProvider>
       </body>
     </html>
   );

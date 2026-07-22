@@ -28,17 +28,40 @@ Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI 
 
 | Area | What it does |
 |------|----------------|
-| **Auth** | Phone or email → OTP → profile setup (role, school, class, child) |
-| **Home** | Child identity, quick actions, today’s stats, AI nudge, recent feed |
-| **Homework** | Subject list, priority, due dates, status chips |
+| **Auth** | Phone or email → OTP → profile setup (role, school, class, child). Role is saved permanently for that identity |
+| **Home** | Role-aware dashboards for parent, student, teacher, admin |
+| **School Admin** | Users & roles, annual grade promotion, academic sessions, school overview (`/admin`) |
+| **Super Admin** | Multi-school activate/pause, assign School Admin / Super Admin, plus all admin tools |
+| **Teacher Class Desk** | Roster, quick attendance marks, daily activity post, parent DMs, announcements |
+| **Student Zone** | XP/levels, streaks, mood check-in, daily missions, focus timer, weekly challenge, badges |
+| **Chats** | WhatsApp-style threads + emoji reactions. Teachers post daily activity, homework & progress |
+| **Notifications** | Unread alerts for homework, activity, progress, fees, circulars |
+| **Homework** | Filter, status updates; teachers can post new homework to class chat |
 | **Attendance** | Monthly % + calendar (Present / Absent / Leave / Half) |
 | **Fees** | Outstanding amount, Pay now UI, payment history + receipts |
 | **Circulars** | School notices/events feed with filters and bookmarks |
 | **Bus tracking** | Simulated live map, ETA, driver card, route stops |
 | **AI assistant** | Chat-style UI with suggestions and composer (mock replies) |
-| **Shell** | Mobile phone shell, bottom nav, AI / notifications / sign-out |
+| **Shell** | Mobile phone shell, role-based bottom nav |
 
-**Roles supported in signup:** Parent, Student, Class Teacher, Bus Attendant, Principal, School Admin.
+**Visual theme:** Colors, fonts (**Sora** + **Inter**), shadows, and motion timing match `schoolsetu-demo.html` (blue `#2563EB`, paper `#F7F9FD`, ink `#0F172A`, 0.18s UI / 0.5s feed / 0.7s reveal).
+
+**Roles supported in signup:** Parent, Student, Class Teacher, Bus Attendant, Principal, School Admin, Super Admin.
+
+### Admin vs Super Admin
+
+| Capability | School Admin | Super Admin |
+|------------|--------------|-------------|
+| School user directory | Own school | All schools |
+| Change user roles | Yes (not Super Admin) | Yes (including Super Admin) |
+| Annual class promotion (pass → next grade) | Yes | Yes |
+| Complete / start academic session | Yes | Yes |
+| Activate / pause schools | No | Yes |
+| Teacher class desk | No (uses Admin console) | No |
+
+### Student grade promotion
+
+At annual session end, Admin opens **Admin → Promote**, marks each student **Pass** or **Retain**, then **Apply promotion**. Pass moves `6-B` → `7-B` (section kept); Retain keeps the same class. History is stored on the student profile (`classHistory`).
 
 ---
 
@@ -55,9 +78,9 @@ Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI 
 ## Project structure
 
 ```text
-app/                 # Routes (/, /auth, /homework, /attendance, /fees, /circulars, /bus, /ai)
+app/                 # Routes (/, /auth, /chats, /chats/[id], /notifications, /homework, ...)
 components/          # PhoneShell, Icons
-lib/                 # auth, config
+lib/                 # auth, config, school-data (chats / notifications / homework)
 public/              # Static assets
 .env.development     # Local defaults (auto-loaded by `next dev`)
 .env.staging         # Staging defaults (reference / copy)
@@ -286,7 +309,11 @@ Expose port **3000** (or set `PORT`).
 4. Enter OTP **`000000`** (or whatever `NEXT_PUBLIC_DEMO_OTP` is)
 5. Complete profile on first login
 
-Session is stored in the browser (`localStorage` keys `sc_auth_user_v1`, `sc_users_v1`).
+Session is stored in the browser (`localStorage` keys `sc_auth_user_v1`, `sc_users_v1`, `sc_admin_data_v1`).
+
+**Role persistence:** On first profile setup, the selected role is written to `sc_users_v1` under that phone/email. Re-login with the same identifier restores that role — you are not asked to pick again.
+
+**Try Admin:** Sign up as **School Admin** or **Super Admin** → open **Admin** in the bottom nav (`/admin`) → Users / Promote / Session (/ Schools for Super Admin).
 
 ---
 
@@ -300,7 +327,10 @@ Session is stored in the browser (`localStorage` keys `sc_auth_user_v1`, `sc_use
 6. **Env files** — Commit `.env.development`, `.env.staging`, `.env.production`, `.env.example`. Never commit `.env.local` or real production secrets.
 7. **Install** — Prefer `npm ci` in CI/CD and servers for reproducible installs.
 8. **Auth redirect** — Protected routes send users to `/auth`. Optional: `/auth?redirect=/fees`.
-9. **Routes to smoke-test after deploy** — `/`, `/auth`, `/homework`, `/attendance`, `/fees`, `/circulars`, `/bus`, `/ai`.
+9. **Routes to smoke-test after deploy** — `/`, `/auth`, `/admin`, `/engage`, `/class`, `/chats`, `/chats/class-6b`, `/notifications`, `/homework`, `/attendance`, `/fees`, `/circulars`, `/bus`, `/ai`.
+10. **Teacher posting** — Sign up as **Class Teacher** or **Principal**. Use `/class` for roster + daily activity, `/attendance` to mark P/A/L/H, `/homework` to post tasks, `/circulars` to announce, and chats for progress notes / parent DMs.
+11. **Admin / promotion** — Sign up as **School Admin** or **Super Admin**. Use `/admin` for users, annual promotion (Pass → next class), and sessions. Super Admin also manages schools.
+12. **Student engagement** — Register as **Student** to get Student Zone in the bottom nav (XP, streaks, missions, focus timer). Parents/teachers can still open `/engage` from the sparkles icon.
 
 ---
 

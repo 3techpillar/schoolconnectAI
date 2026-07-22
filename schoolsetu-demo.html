@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SchoolSetu — One tap. Every update about your child.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue:#2563EB;
+    --blue-dark:#1E3A8A;
+    --blue-deep:#152a63;
+    --blue-light:#DBEAFE;
+    --blue-tint:#EFF4FE;
+    --ink:#0F172A;
+    --slate:#5B6779;
+    --paper:#F7F9FD;
+    --white:#FFFFFF;
+    --amber:#F59E0B;
+    --amber-tint:#FEF3E2;
+    --green:#16A34A;
+    --green-tint:#E9F8EF;
+    --violet:#7C3AED;
+    --violet-tint:#F2ECFE;
+    --line:#E4E9F2;
+    --shadow: 0 20px 50px -20px rgba(21,42,99,0.25);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    background:var(--paper);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4, .display{ font-family:'Sora', sans-serif; letter-spacing:-0.02em; }
+  a{ text-decoration:none; color:inherit; }
+  ul{ list-style:none; }
+  img{ max-width:100%; display:block; }
+  .container{ max-width:1180px; margin:0 auto; padding:0 28px; }
+  .eyebrow{
+    display:inline-flex; align-items:center; gap:8px;
+    font-size:12.5px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase;
+    color:var(--blue-dark);
+  }
+  .eyebrow::before{
+    content:''; width:7px; height:7px; border-radius:50%; background:var(--blue);
+    box-shadow:0 0 0 4px var(--blue-light);
+  }
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    padding:14px 26px; border-radius:12px; font-weight:600; font-size:15px;
+    cursor:pointer; border:none; transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
+    font-family:'Inter', sans-serif;
+  }
+  .btn-primary{ background:var(--blue); color:#fff; box-shadow:0 12px 24px -10px rgba(37,99,235,0.55); }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 16px 30px -10px rgba(37,99,235,0.65); }
+  .btn-ghost{ background:transparent; color:var(--blue-dark); border:1.5px solid var(--line); }
+  .btn-ghost:hover{ border-color:var(--blue); background:var(--blue-tint); }
+
+  /* ---------- NAV ---------- */
+  header{
+    position:sticky; top:0; z-index:100;
+    background:rgba(247,249,253,0.82);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; max-width:1180px; margin:0 auto; }
+  .logo{ display:flex; align-items:center; gap:10px; font-family:'Sora'; font-weight:700; font-size:19px; }
+  .logo-mark{
+    width:34px; height:34px; border-radius:9px; background:linear-gradient(145deg, var(--blue), var(--blue-dark));
+    display:flex; align-items:center; justify-content:center; box-shadow:0 6px 14px -4px rgba(37,99,235,0.6);
+  }
+  .nav-links{ display:flex; gap:34px; font-size:14.5px; font-weight:600; color:var(--slate); }
+  .nav-links a:hover{ color:var(--blue); }
+  .nav-cta{ display:flex; align-items:center; gap:14px; }
+  .menu-btn{ display:none; background:none; border:none; cursor:pointer; }
+
+  /* ---------- HERO ---------- */
+  .hero{ position:relative; padding:64px 0 40px; overflow:hidden; }
+  .hero::before{
+    content:''; position:absolute; top:-180px; right:-160px; width:560px; height:560px; border-radius:50%;
+    background:radial-gradient(circle, rgba(37,99,235,0.16), transparent 70%);
+    z-index:0;
+  }
+  .hero-grid{
+    display:grid; grid-template-columns:1.05fr 0.95fr; gap:56px; align-items:center;
+    position:relative; z-index:1;
+  }
+  .hero h1{ font-size:52px; line-height:1.06; margin:20px 0 22px; font-weight:700; }
+  .hero h1 span{ color:var(--blue); }
+  .hero p.lead{ font-size:18px; color:var(--slate); line-height:1.65; max-width:480px; margin-bottom:32px; }
+  .hero-ctas{ display:flex; gap:14px; margin-bottom:36px; flex-wrap:wrap; }
+  .trust-row{ display:flex; align-items:center; gap:14px; }
+  .avatars{ display:flex; }
+  .avatars span{
+    width:34px; height:34px; border-radius:50%; border:2.5px solid var(--paper);
+    margin-left:-10px; display:flex; align-items:center; justify-content:center;
+    font-size:12px; font-weight:700; color:#fff;
+  }
+  .avatars span:first-child{ margin-left:0; }
+  .trust-text{ font-size:13.5px; color:var(--slate); }
+  .trust-text strong{ color:var(--ink); }
+
+  /* ---------- PHONE MOCKUP ---------- */
+  .phone-wrap{ position:relative; display:flex; justify-content:center; }
+  .phone{
+    width:300px; height:610px; background:var(--ink); border-radius:44px; padding:12px;
+    box-shadow:var(--shadow); position:relative; z-index:2;
+  }
+  .phone-screen{
+    width:100%; height:100%; background:var(--white); border-radius:34px; overflow:hidden; position:relative;
+    display:flex; flex-direction:column;
+  }
+  .status-bar{ display:flex; justify-content:space-between; padding:14px 20px 4px; font-size:11px; font-weight:600; color:var(--ink);}
+  .app-top{ padding:6px 18px 14px; }
+  .app-top .greet{ font-size:12.5px; color:var(--slate); }
+  .app-top .name{ font-size:19px; font-weight:700; font-family:'Sora'; }
+  .map-card{
+    margin:0 16px 12px; height:190px; border-radius:20px; position:relative; overflow:hidden;
+    background:linear-gradient(160deg, #E7EEFD, #F4F7FE);
+    border:1px solid var(--line);
+  }
+  .map-svg{ width:100%; height:100%; display:block; }
+  .eta-pill{
+    position:absolute; left:12px; bottom:12px; background:rgba(15,23,42,0.88); color:#fff;
+    padding:8px 12px; border-radius:12px; font-size:11.5px; font-weight:600; display:flex; align-items:center; gap:8px;
+    backdrop-filter:blur(4px);
+  }
+  .eta-pill .dot{ width:7px; height:7px; border-radius:50%; background:#4ADE80; box-shadow:0 0 0 4px rgba(74,222,128,0.28); }
+  .eta-num{ color:#93C5FD; font-weight:700; }
+  .quick-row{ display:flex; gap:10px; padding:0 16px; margin-bottom:14px; }
+  .quick{
+    flex:1; background:var(--paper); border:1px solid var(--line); border-radius:14px; padding:10px 8px; text-align:center;
+  }
+  .quick .qicon{ font-size:17px; margin-bottom:4px; }
+  .quick .qlabel{ font-size:9.5px; font-weight:700; color:var(--slate); text-transform:uppercase; letter-spacing:.04em;}
+  .quick .qval{ font-size:12.5px; font-weight:700; margin-top:1px; }
+  .feed{ padding:0 16px; display:flex; flex-direction:column; gap:9px; flex:1; overflow:hidden; }
+  .feed-item{
+    display:flex; gap:10px; align-items:flex-start; background:var(--paper); border-radius:14px; padding:10px 12px;
+    border:1px solid var(--line); opacity:0; transform:translateY(6px);
+    animation:feedIn .5s ease forwards;
+  }
+  .feed-item .fi-ic{ width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:14px; flex-shrink:0; }
+  .feed-item .fi-text{ font-size:11.5px; line-height:1.4; }
+  .feed-item .fi-text b{ font-weight:700; }
+  .feed-item .fi-time{ font-size:9.5px; color:var(--slate); margin-top:2px; }
+  @keyframes feedIn{ to{ opacity:1; transform:translateY(0); } }
+  .tabbar{ display:flex; justify-content:space-around; padding:10px 8px 16px; border-top:1px solid var(--line); margin-top:auto; }
+  .tabbar .tb{ width:22px; height:22px; border-radius:7px; background:var(--line); }
+  .tabbar .tb.active{ background:var(--blue); }
+
+  .float-card{
+    position:absolute; background:#fff; border-radius:16px; box-shadow:var(--shadow); padding:12px 14px;
+    display:flex; align-items:center; gap:10px; z-index:3; border:1px solid var(--line);
+  }
+  .float-1{ top:60px; left:-38px; }
+  .float-2{ bottom:120px; right:-30px; }
+  .fc-ic{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:17px; }
+  .fc-title{ font-size:12px; font-weight:700; }
+  .fc-sub{ font-size:10.5px; color:var(--slate); }
+
+  /* ---------- SECTION BASICS ---------- */
+  section{ padding:96px 0; }
+  .section-head{ max-width:620px; margin-bottom:56px; }
+  .section-head h2{ font-size:36px; font-weight:700; margin:16px 0 14px; line-height:1.15; }
+  .section-head p{ font-size:16.5px; color:var(--slate); line-height:1.65; }
+  .center{ text-align:center; margin-left:auto; margin-right:auto; }
+
+  /* ---------- FEATURES ---------- */
+  .feat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  .feat-card{
+    background:#fff; border:1px solid var(--line); border-radius:20px; padding:28px 22px; position:relative;
+    transition:transform .25s ease, box-shadow .25s ease; overflow:hidden;
+  }
+  .feat-card:hover{ transform:translateY(-6px); box-shadow:0 24px 40px -20px rgba(15,23,42,0.18); }
+  .feat-ic{ width:46px; height:46px; border-radius:13px; display:flex; align-items:center; justify-content:center; font-size:21px; margin-bottom:18px; }
+  .feat-card h3{ font-size:17.5px; margin-bottom:9px; }
+  .feat-card p{ font-size:14px; color:var(--slate); line-height:1.6; }
+  .ic-blue{ background:var(--blue-light); }
+  .ic-green{ background:var(--green-tint); }
+  .ic-amber{ background:var(--amber-tint); }
+  .ic-violet{ background:var(--violet-tint); }
+
+  /* ---------- DEMO / TABS ---------- */
+  .demo{ background:linear-gradient(180deg, var(--blue-deep), var(--blue-dark) 60%, #142252); border-radius:32px; padding:70px 8px; color:#fff; position:relative; overflow:hidden;}
+  .demo::before{ content:''; position:absolute; inset:0; background:radial-gradient(circle at 80% 0%, rgba(96,141,255,0.25), transparent 55%); }
+  .demo-inner{ position:relative; z-index:1; max-width:1080px; margin:0 auto; padding:0 28px; }
+  .demo .section-head p{ color:#B9C5EA; }
+  .demo .section-head h2{ color:#fff; }
+  .demo-layout{ display:grid; grid-template-columns:0.85fr 1.15fr; gap:48px; align-items:center; }
+  .tabs{ display:flex; flex-direction:column; gap:10px; }
+  .tab{
+    display:flex; align-items:center; gap:14px; padding:16px 18px; border-radius:16px; cursor:pointer;
+    border:1px solid rgba(255,255,255,0.08); background:rgba(255,255,255,0.03); transition:all .2s ease;
+  }
+  .tab:hover{ background:rgba(255,255,255,0.07); }
+  .tab.active{ background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.25); }
+  .tab .t-ic{ width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .tab .t-title{ font-weight:700; font-size:15px; }
+  .tab .t-sub{ font-size:12.5px; color:#AEB9DD; }
+  .demo-phone-holder{ display:flex; justify-content:center; }
+
+  /* ---------- HOW IT WORKS ---------- */
+  .steps{ display:grid; grid-template-columns:repeat(3,1fr); gap:26px; counter-reset:step; }
+  .step{ position:relative; padding:30px 24px; border-radius:20px; background:#fff; border:1px solid var(--line); }
+  .step .num{ font-family:'Sora'; font-size:14px; font-weight:700; color:var(--blue); background:var(--blue-tint); width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; margin-bottom:18px; }
+  .step h3{ font-size:17.5px; margin-bottom:8px; }
+  .step p{ font-size:14px; color:var(--slate); line-height:1.6; }
+  .step-line{ position:absolute; top:38px; left:100%; width:26px; height:2px; background:var(--line); }
+
+  /* ---------- STATS ---------- */
+  .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:20px; text-align:center; }
+  .stat-num{ font-family:'Sora'; font-size:38px; font-weight:800; color:var(--blue-dark); }
+  .stat-label{ font-size:13.5px; color:var(--slate); margin-top:6px; font-weight:600; }
+
+  /* ---------- CTA ---------- */
+  .cta-banner{
+    background:var(--ink); border-radius:28px; padding:64px 48px; display:flex; align-items:center; justify-content:space-between; gap:40px; color:#fff; position:relative; overflow:hidden;
+  }
+  .cta-banner::after{ content:''; position:absolute; right:-80px; bottom:-80px; width:280px; height:280px; border-radius:50%; background:radial-gradient(circle, rgba(37,99,235,0.35), transparent 70%);}
+  .cta-banner h2{ font-size:30px; max-width:460px; position:relative; z-index:1; }
+  .cta-actions{ display:flex; gap:14px; position:relative; z-index:1; flex-shrink:0; }
+  .store-btn{ display:flex; align-items:center; gap:10px; background:#1B2438; border:1px solid rgba(255,255,255,0.15); padding:11px 18px; border-radius:12px; }
+  .store-btn .s-sub{ font-size:9.5px; color:#9AA5C4; }
+  .store-btn .s-main{ font-size:14px; font-weight:700; }
+
+  /* ---------- FOOTER ---------- */
+  footer{ padding:50px 0 34px; border-top:1px solid var(--line); }
+  .foot-grid{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:30px; margin-bottom:34px; }
+  .foot-cols{ display:flex; gap:64px; flex-wrap:wrap; }
+  .foot-col h4{ font-size:12.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--slate); margin-bottom:14px; }
+  .foot-col a{ display:block; font-size:14px; color:var(--ink); margin-bottom:10px; }
+  .foot-col a:hover{ color:var(--blue); }
+  .foot-bottom{ display:flex; justify-content:space-between; font-size:13px; color:var(--slate); border-top:1px solid var(--line); padding-top:24px; flex-wrap:wrap; gap:10px;}
+
+  /* ---------- REVEAL ---------- */
+  .reveal{ opacity:0; transform:translateY(24px); transition:opacity .7s ease, transform .7s ease; }
+  .reveal.in{ opacity:1; transform:translateY(0); }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media(max-width:980px){
+    .hero-grid{ grid-template-columns:1fr; }
+    .phone-wrap{ order:-1; margin-bottom:20px; }
+    .feat-grid{ grid-template-columns:repeat(2,1fr); }
+    .demo-layout{ grid-template-columns:1fr; }
+    .steps{ grid-template-columns:1fr; }
+    .stats{ grid-template-columns:repeat(2,1fr); }
+    .nav-links{ display:none; }
+    .cta-banner{ flex-direction:column; text-align:center; }
+    .cta-banner h2{ max-width:100%; }
+  }
+  @media(max-width:600px){
+    .hero h1{ font-size:36px; }
+    .feat-grid{ grid-template-columns:1fr; }
+    .float-1, .float-2{ display:none; }
+    .phone{ width:260px; height:530px; }
+    .foot-cols{ gap:34px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{ animation-duration:0.001ms !important; animation-iteration-count:1 !important; transition-duration:0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <nav>
+    <div class="logo">
+      <div class="logo-mark">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V9L12 4L20 9V19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 19V13H15V19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      SchoolSetu
+    </div>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#demo">Live demo</a>
+      <a href="#how">How it works</a>
+      <a href="#schools">For schools</a>
+    </div>
+    <div class="nav-cta">
+      <a href="#" class="btn btn-ghost" style="padding:10px 18px; font-size:14px;">Sign in</a>
+      <a href="#download" class="btn btn-primary" style="padding:10px 20px; font-size:14px;">Get the app</a>
+    </div>
+  </nav>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">Built with parents, for parents</span>
+        <h1>Stop asking<br>“<span>is the bus here yet?</span>”</h1>
+        <p class="lead">SchoolSetu bridges your child's school and your phone — live bus location, real-time attendance, fee payments and circulars, all in one tap. No more group-chat guesswork.</p>
+        <div class="hero-ctas">
+          <a href="#download" class="btn btn-primary">Get the app — it's free</a>
+          <a href="#demo" class="btn btn-ghost">Watch it work ↓</a>
+        </div>
+        <div class="trust-row">
+          <div class="avatars">
+            <span style="background:#2563EB;">A</span>
+            <span style="background:#F59E0B;">R</span>
+            <span style="background:#16A34A;">M</span>
+            <span style="background:#7C3AED;">S</span>
+          </div>
+          <div class="trust-text"><strong>2.4M+ parents</strong> already know where their child is, right now.</div>
+        </div>
+      </div>
+
+      <div class="phone-wrap">
+        <div class="float-card float-1">
+          <div class="fc-ic" style="background:var(--green-tint);">✅</div>
+          <div>
+            <div class="fc-title">Marked Present</div>
+            <div class="fc-sub">Aarav · 8:04 AM</div>
+          </div>
+        </div>
+        <div class="float-card float-2">
+          <div class="fc-ic" style="background:var(--amber-tint);">💳</div>
+          <div>
+            <div class="fc-title">Fee receipt sent</div>
+            <div class="fc-sub">Term 2 · ₹18,500</div>
+          </div>
+        </div>
+
+        <div class="phone">
+          <div class="phone-screen">
+            <div class="status-bar"><span>9:41</span><span>●●● 5G 100%</span></div>
+            <div class="app-top">
+              <div class="greet">Good morning, Priya</div>
+              <div class="name">Aarav's day</div>
+            </div>
+            <div class="map-card">
+              <svg class="map-svg" viewBox="0 0 300 190">
+                <path d="M10 150 C 70 150, 60 60, 130 60 S 220 30, 290 40" stroke="#C7D6FB" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="1 14"/>
+                <circle cx="10" cy="150" r="5" fill="#2563EB"/>
+                <circle cx="290" cy="40" r="5" fill="#16A34A"/>
+                <circle id="busDot" r="9" fill="#2563EB">
+                  <animateMotion dur="7s" repeatCount="indefinite" path="M10 150 C 70 150, 60 60, 130 60 S 220 30, 290 40"/>
+                </circle>
+                <circle r="15" fill="#2563EB" opacity="0.25">
+                  <animateMotion dur="7s" repeatCount="indefinite" path="M10 150 C 70 150, 60 60, 130 60 S 220 30, 290 40"/>
+                  <animate attributeName="r" values="9;17;9" dur="1.4s" repeatCount="indefinite"/>
+                </circle>
+              </svg>
+              <div class="eta-pill"><span class="dot"></span> Bus 12 · <span class="eta-num" id="etaText">4 stops away</span></div>
+            </div>
+            <div class="quick-row">
+              <div class="quick"><div class="qicon">🎒</div><div class="qlabel">Attendance</div><div class="qval" style="color:var(--green);">Present</div></div>
+              <div class="quick"><div class="qicon">💳</div><div class="qlabel">Fees</div><div class="qval" style="color:var(--amber);">Due in 3d</div></div>
+              <div class="quick"><div class="qicon">📄</div><div class="qlabel">Circulars</div><div class="qval" id="circCount" style="color:var(--violet);">2 new</div></div>
+            </div>
+            <div class="feed" id="hero-feed">
+              <div class="feed-item" style="animation-delay:.1s;">
+                <div class="fi-ic" style="background:var(--blue-light);">🚌</div>
+                <div><div class="fi-text"><b>Bus 12</b> turned onto Sector 62 Road</div><div class="fi-time">Just now</div></div>
+              </div>
+              <div class="feed-item" style="animation-delay:.25s;">
+                <div class="fi-ic" style="background:var(--violet-tint);">📄</div>
+                <div><div class="fi-text">New circular: <b>Annual Day rehearsal</b></div><div class="fi-time">9 min ago</div></div>
+              </div>
+            </div>
+            <div class="tabbar">
+              <div class="tb active"></div><div class="tb"></div><div class="tb"></div><div class="tb"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Everything, in one app</span>
+        <h2>Four things every parent asks about. Answered before you ask.</h2>
+        <p>SchoolSetu was designed around the questions parents actually type into the class WhatsApp group — and answers them automatically instead.</p>
+      </div>
+      <div class="feat-grid">
+        <div class="feat-card reveal">
+          <div class="feat-ic ic-blue">🚌</div>
+          <h3>Live bus tracking</h3>
+          <p>Watch the bus move on the map in real time, and get an alert the moment it's two stops from home.</p>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-ic ic-green">✅</div>
+          <h3>Attendance, instantly</h3>
+          <p>A ping the second your child taps in at the gate — no waiting for a diary entry that comes home at 4 PM.</p>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-ic ic-amber">💳</div>
+          <h3>Fees, paid in one tap</h3>
+          <p>UPI, cards or net banking. The receipt lands in your inbox before you've put your phone back in your pocket.</p>
+        </div>
+        <div class="feat-card reveal">
+          <div class="feat-ic ic-violet">📄</div>
+          <h3>Circulars, without the chaos</h3>
+          <p>Every notice from school arrives directly to you, translated if you need it, with nothing lost in a 200-message thread.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIVE DEMO -->
+  <section id="demo">
+    <div class="container">
+      <div class="demo reveal">
+        <div class="demo-inner">
+          <div class="section-head center" style="max-width:640px;">
+            <span class="eyebrow" style="color:#8FA6FF;">Try it yourself</span>
+            <h2>Tap a module. Watch the phone update.</h2>
+            <p>This is a live preview of what a parent sees — pick a tab and the screen on the right responds instantly.</p>
+          </div>
+          <div class="demo-layout">
+            <div class="tabs" id="demoTabs">
+              <div class="tab active" data-tab="bus">
+                <div class="t-ic" style="background:rgba(37,99,235,0.25);">🚌</div>
+                <div><div class="t-title">Bus tracking</div><div class="t-sub">See exactly where the bus is</div></div>
+              </div>
+              <div class="tab" data-tab="attendance">
+                <div class="t-ic" style="background:rgba(22,163,74,0.25);">✅</div>
+                <div><div class="t-title">Attendance</div><div class="t-sub">In-gate and out-gate, instantly</div></div>
+              </div>
+              <div class="tab" data-tab="fees">
+                <div class="t-ic" style="background:rgba(245,158,11,0.25);">💳</div>
+                <div><div class="t-title">Fee payments</div><div class="t-sub">Pay, track, and get receipts</div></div>
+              </div>
+              <div class="tab" data-tab="circulars">
+                <div class="t-ic" style="background:rgba(124,58,237,0.25);">📄</div>
+                <div><div class="t-title">Circulars</div><div class="t-sub">School notices, organised</div></div>
+              </div>
+            </div>
+
+            <div class="demo-phone-holder">
+              <div class="phone">
+                <div class="phone-screen">
+                  <div class="status-bar"><span>9:41</span><span>●●● 5G 100%</span></div>
+                  <div class="app-top">
+                    <div class="greet" id="demoGreet">Bus tracking</div>
+                    <div class="name" id="demoTitle">Bus 12 is on the way</div>
+                  </div>
+                  <div id="demoBody" style="flex:1; padding:0 16px; display:flex; flex-direction:column; gap:10px; overflow:hidden;">
+                    <!-- injected by JS -->
+                  </div>
+                  <div class="tabbar">
+                    <div class="tb active"></div><div class="tb"></div><div class="tb"></div><div class="tb"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section id="how">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Setup takes under 5 minutes</span>
+        <h2>From download to your first ping.</h2>
+        <p>No paperwork at your end — your child's school does the setup, you just accept the invite.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <div class="num">01</div>
+          <h3>Add your child</h3>
+          <p>Enter the invite code shared by your school, or scan the QR code sent home on day one.</p>
+        </div>
+        <div class="step reveal">
+          <div class="num">02</div>
+          <h3>School confirms the link</h3>
+          <p>The class teacher approves the request, so only verified parents ever see a child's data.</p>
+        </div>
+        <div class="step reveal">
+          <div class="num">03</div>
+          <h3>Everything starts syncing</h3>
+          <p>Bus location, attendance, fees and circulars begin appearing in your feed from that morning onward.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section id="schools">
+    <div class="container">
+      <div class="section-head reveal">
+        <span class="eyebrow">Trusted at scale</span>
+        <h2>Schools switch to SchoolSetu to end the phone calls.</h2>
+        <p>Front-office teams get fewer "where is the bus" calls, and finance teams get fee collection that reconciles itself.</p>
+      </div>
+      <div class="stats">
+        <div class="reveal"><div class="stat-num" data-target="1200">0</div><div class="stat-label">Schools onboarded</div></div>
+        <div class="reveal"><div class="stat-num" data-target="24" data-suffix="L+">0</div><div class="stat-label">Parents on the app</div></div>
+        <div class="reveal"><div class="stat-num" data-target="60" data-suffix="M+">0</div><div class="stat-label">Bus trips tracked</div></div>
+        <div class="reveal"><div class="stat-num" data-target="99" data-suffix=".9%">0</div><div class="stat-label">Uptime this term</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section id="download">
+    <div class="container">
+      <div class="cta-banner reveal">
+        <h2>Your child's school day, finally on your terms.</h2>
+        <div class="cta-actions">
+          <a href="#" class="store-btn"><span style="font-size:20px;"></span><div><div class="s-sub">Download on the</div><div class="s-main">App Store</div></div></a>
+          <a href="#" class="store-btn"><span style="font-size:20px;">▶</span><div><div class="s-sub">GET IT ON</div><div class="s-main">Google Play</div></div></a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="container">
+    <div class="foot-grid">
+      <div class="logo">
+        <div class="logo-mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M4 19V9L12 4L20 9V19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 19V13H15V19" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        SchoolSetu
+      </div>
+      <div class="foot-cols">
+        <div class="foot-col">
+          <h4>Product</h4>
+          <a href="#features">Features</a>
+          <a href="#demo">Live demo</a>
+          <a href="#how">How it works</a>
+        </div>
+        <div class="foot-col">
+          <h4>For schools</h4>
+          <a href="#">Admin dashboard</a>
+          <a href="#">Bus fleet setup</a>
+          <a href="#">Pricing</a>
+        </div>
+        <div class="foot-col">
+          <h4>Company</h4>
+          <a href="#">About</a>
+          <a href="#">Support</a>
+          <a href="#">Privacy</a>
+        </div>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 SchoolSetu. This is a demo concept — not a live product.</span>
+      <span>Made with Royal Blue #2563EB</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // ---- Hero ETA ticker ----
+  const etaSteps = ["4 stops away","3 stops away","2 stops away","1 stop away","Arriving now"];
+  let etaIdx = 0;
+  const etaEl = document.getElementById('etaText');
+  setInterval(()=>{
+    etaIdx = (etaIdx+1) % etaSteps.length;
+    etaEl.textContent = etaSteps[etaIdx];
+  }, 1600);
+
+  // ---- Hero feed: rotate in a new event periodically ----
+  const heroFeedEvents = [
+    {ic:'🚌', bg:'var(--blue-light)', text:'<b>Bus 12</b> turned onto Sector 62 Road', time:'Just now'},
+    {ic:'✅', bg:'var(--green-tint)', text:'<b>Aarav</b> marked Present at the gate', time:'2 min ago'},
+    {ic:'📄', bg:'var(--violet-tint)', text:'New circular: <b>Annual Day rehearsal</b>', time:'9 min ago'},
+    {ic:'💳', bg:'var(--amber-tint)', text:'Fee reminder: <b>Term 2</b> due in 3 days', time:'20 min ago'},
+  ];
+  let feedIdx = 0;
+  const feedContainer = document.getElementById('hero-feed');
+  function pushFeedItem(){
+    feedIdx = (feedIdx+1) % heroFeedEvents.length;
+    const e = heroFeedEvents[feedIdx];
+    const item = document.createElement('div');
+    item.className = 'feed-item';
+    item.innerHTML = `<div class="fi-ic" style="background:${e.bg};">${e.ic}</div><div><div class="fi-text">${e.text}</div><div class="fi-time">${e.time}</div></div>`;
+    feedContainer.prepend(item);
+    while(feedContainer.children.length > 2){ feedContainer.removeChild(feedContainer.lastChild); }
+  }
+  setInterval(pushFeedItem, 3600);
+
+  // ---- Circular unread count ticks down when hero circular quick-tile is "read" (demo interactivity) ----
+  let circUnread = 2;
+  document.querySelector('.quick:nth-child(3)').addEventListener('click', ()=>{
+    if(circUnread > 0){ circUnread--; document.getElementById('circCount').textContent = circUnread > 0 ? circUnread+' new' : 'All read'; }
+  });
+
+  // ---- Interactive demo tabs ----
+  const demoData = {
+    bus: {
+      greet:'Bus tracking', title:'Bus 12 is on the way',
+      body:`
+        <div class="map-card" style="margin:0 0 4px;">
+          <svg class="map-svg" viewBox="0 0 300 190">
+            <path d="M10 150 C 70 150, 60 60, 130 60 S 220 30, 290 40" stroke="#C7D6FB" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="1 14"/>
+            <circle cx="10" cy="150" r="5" fill="#2563EB"/><circle cx="290" cy="40" r="5" fill="#16A34A"/>
+            <circle r="9" fill="#2563EB"><animateMotion dur="6s" repeatCount="indefinite" path="M10 150 C 70 150, 60 60, 130 60 S 220 30, 290 40"/></circle>
+          </svg>
+          <div class="eta-pill"><span class="dot"></span> 2 stops away · ETA 8 min</div>
+        </div>
+        <div class="feed-item"><div class="fi-ic" style="background:var(--blue-light);">🚏</div><div><div class="fi-text">Next stop: <b>Green Park Gate</b></div><div class="fi-time">Now</div></div></div>
+        <div class="feed-item" style="animation-delay:.15s;"><div class="fi-ic" style="background:var(--blue-light);">👨‍✈️</div><div><div class="fi-text">Driver: <b>Ramesh Kumar</b> · Bus 12</div><div class="fi-time">On duty since 7:20 AM</div></div></div>
+      `
+    },
+    attendance: {
+      greet:'Attendance', title:'Marked Present today',
+      body:`
+        <div class="feed-item"><div class="fi-ic" style="background:var(--green-tint);">✅</div><div><div class="fi-text"><b>In-gate</b> at 8:04 AM · Main Gate</div><div class="fi-time">Verified by RFID card</div></div></div>
+        <div class="feed-item" style="animation-delay:.15s;"><div class="fi-ic" style="background:var(--green-tint);">🏫</div><div><div class="fi-text">Class 6-B homeroom check · Present</div><div class="fi-time">9:00 AM</div></div></div>
+        <div class="feed-item" style="animation-delay:.3s;"><div class="fi-ic" style="background:var(--blue-light);">📊</div><div><div class="fi-text">This month: <b>22/23 days present</b></div><div class="fi-time">95.6% attendance</div></div></div>
+      `
+    },
+    fees: {
+      greet:'Fee payments', title:'Term 2 · ₹18,500 due',
+      body:`
+        <div class="feed-item"><div class="fi-ic" style="background:var(--amber-tint);">⏳</div><div><div class="fi-text">Term 2 fee due in <b>3 days</b></div><div class="fi-time">Late fee waived until then</div></div></div>
+        <div class="feed-item" style="animation-delay:.15s;"><div class="fi-ic" style="background:var(--green-tint);">🧾</div><div><div class="fi-text">Term 1 receipt · <b>₹17,200</b> paid</div><div class="fi-time">Paid via UPI · Apr 3</div></div></div>
+        <div class="feed-item" style="animation-delay:.3s;"><div class="fi-ic" style="background:var(--blue-light);">💳</div><div><div class="fi-text">Saved: UPI, 1 card, net banking</div><div class="fi-time">One-tap checkout ready</div></div></div>
+      `
+    },
+    circulars: {
+      greet:'Circulars', title:'2 new notices',
+      body:`
+        <div class="feed-item"><div class="fi-ic" style="background:var(--violet-tint);">🎭</div><div><div class="fi-text"><b>Annual Day rehearsal</b> — Thu, 4 PM</div><div class="fi-time">From: Class teacher · 9 min ago</div></div></div>
+        <div class="feed-item" style="animation-delay:.15s;"><div class="fi-ic" style="background:var(--violet-tint);">🩺</div><div><div class="fi-text"><b>Health check-up camp</b> next Monday</div><div class="fi-time">From: School nurse · 1 hr ago</div></div></div>
+        <div class="feed-item" style="animation-delay:.3s;"><div class="fi-ic" style="background:var(--blue-light);">👍</div><div><div class="fi-text">Tap a notice to send a read receipt</div><div class="fi-time">No more "did you see my message?"</div></div></div>
+      `
+    }
+  };
+  const tabs = document.querySelectorAll('#demoTabs .tab');
+  const demoBody = document.getElementById('demoBody');
+  const demoGreet = document.getElementById('demoGreet');
+  const demoTitle = document.getElementById('demoTitle');
+  function renderTab(key){
+    const d = demoData[key];
+    demoGreet.textContent = d.greet;
+    demoTitle.textContent = d.title;
+    demoBody.style.opacity = 0;
+    setTimeout(()=>{ demoBody.innerHTML = d.body; demoBody.style.transition='opacity .3s ease'; demoBody.style.opacity = 1; }, 120);
+  }
+  tabs.forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      tabs.forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      renderTab(tab.dataset.tab);
+      clearInterval(autoRotate); startAutoRotate();
+    });
+  });
+  renderTab('bus');
+
+  // auto-rotate demo tabs so it feels alive even without interaction
+  let rotateIdx = 0;
+  const tabKeys = ['bus','attendance','fees','circulars'];
+  let autoRotate;
+  function startAutoRotate(){
+    autoRotate = setInterval(()=>{
+      rotateIdx = (rotateIdx+1) % tabKeys.length;
+      tabs.forEach(t=>t.classList.remove('active'));
+      tabs[rotateIdx].classList.add('active');
+      renderTab(tabKeys[rotateIdx]);
+    }, 5000);
+  }
+  startAutoRotate();
+
+  // ---- Reveal on scroll ----
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.15});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  // ---- Animated stat counters ----
+  const statEls = document.querySelectorAll('.stat-num');
+  const statIo = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{
+      if(e.isIntersecting){
+        const el = e.target;
+        const target = parseFloat(el.dataset.target);
+        const suffix = el.dataset.suffix || '';
+        let cur = 0;
+        const step = Math.max(target/40, 0.5);
+        const t = setInterval(()=>{
+          cur += step;
+          if(cur >= target){ cur = target; clearInterval(t); }
+          el.textContent = (Number.isInteger(target) ? Math.floor(cur) : cur.toFixed(1)) + suffix;
+        }, 30);
+        statIo.unobserve(el);
+      }
+    });
+  }, {threshold:0.4});
+  statEls.forEach(el=>statIo.observe(el));
+</script>
+</body>
+</html>

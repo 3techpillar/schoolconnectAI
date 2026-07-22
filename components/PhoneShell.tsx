@@ -3,25 +3,20 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isSchoolAdmin } from "@/lib/auth";
+import { useSchoolData } from "@/lib/school-data";
 import {
   Home,
   BookOpen,
   CalendarCheck,
+  MessageCircle,
   Wallet,
-  Megaphone,
   Bell,
   Sparkles,
   LogOut,
+  GraduationCap,
+  ShieldCheck,
 } from "@/components/Icons";
-
-const NAV = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/homework", label: "Homework", icon: BookOpen },
-  { to: "/attendance", label: "Attend", icon: CalendarCheck },
-  { to: "/fees", label: "Fees", icon: Wallet },
-  { to: "/circulars", label: "Circulars", icon: Megaphone },
-] as const;
 
 interface Props {
   children: ReactNode;
@@ -30,6 +25,7 @@ interface Props {
   showHeader?: boolean;
   headerAccent?: "primary" | "plain";
   rightSlot?: ReactNode;
+  hideNav?: boolean;
 }
 
 export function PhoneShell({
@@ -39,11 +35,49 @@ export function PhoneShell({
   showHeader = true,
   headerAccent = "primary",
   rightSlot,
+  hideNav = false,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const isPrimary = headerAccent === "primary";
   const { user, ready, logout } = useAuth();
+  const { unreadNotifications, unreadChats, canPostAsTeacher } = useSchoolData();
+
+  const isStudent = user?.role === "student";
+  const isTeacher = canPostAsTeacher(user);
+  const isAdmin = isSchoolAdmin(user);
+
+  const NAV = isStudent
+    ? ([
+        { to: "/", label: "Home", icon: Home },
+        { to: "/chats", label: "Chats", icon: MessageCircle },
+        { to: "/homework", label: "Homework", icon: BookOpen },
+        { to: "/engage", label: "Zone", icon: Sparkles },
+        { to: "/attendance", label: "Attend", icon: CalendarCheck },
+      ] as const)
+    : isAdmin
+      ? ([
+          { to: "/", label: "Home", icon: Home },
+          { to: "/admin", label: "Admin", icon: ShieldCheck },
+          { to: "/chats", label: "Chats", icon: MessageCircle },
+          { to: "/circulars", label: "Notice", icon: Bell },
+          { to: "/fees", label: "Fees", icon: Wallet },
+        ] as const)
+    : isTeacher
+      ? ([
+          { to: "/", label: "Home", icon: Home },
+          { to: "/class", label: "Class", icon: GraduationCap },
+          { to: "/chats", label: "Chats", icon: MessageCircle },
+          { to: "/homework", label: "Homework", icon: BookOpen },
+          { to: "/attendance", label: "Attend", icon: CalendarCheck },
+        ] as const)
+      : ([
+          { to: "/", label: "Home", icon: Home },
+          { to: "/chats", label: "Chats", icon: MessageCircle },
+          { to: "/homework", label: "Homework", icon: BookOpen },
+          { to: "/attendance", label: "Attend", icon: CalendarCheck },
+          { to: "/fees", label: "Fees", icon: Wallet },
+        ] as const);
 
   useEffect(() => {
     if (ready && !user) router.replace("/auth");
@@ -66,19 +100,20 @@ export function PhoneShell({
               {rightSlot ?? (
                 <>
                   <Link
-                    href="/ai"
-                    aria-label="AI Assistant"
+                    href={isStudent ? "/engage" : isTeacher ? "/class" : "/ai"}
+                    aria-label={isStudent ? "Student Zone" : isTeacher ? "Class desk" : "AI"}
                     className={`icon-btn ${isPrimary ? "on-primary" : "muted"}`}
                   >
-                    <Sparkles size={18} />
+                    {isTeacher ? <GraduationCap size={18} /> : <Sparkles size={18} />}
                   </Link>
-                  <button
+                  <Link
+                    href="/notifications"
                     aria-label="Notifications"
                     className={`icon-btn relative ${isPrimary ? "on-primary" : "muted"}`}
                   >
                     <Bell size={18} />
-                    <span className="dot-warn" />
-                  </button>
+                    {unreadNotifications > 0 && <span className="dot-warn" />}
+                  </Link>
                   <button
                     onClick={() => {
                       logout();
@@ -98,33 +133,41 @@ export function PhoneShell({
       )}
 
       <main
-        className={`page-main page-x ${showHeader ? "" : "safe-top"}`}
+        className={`page-main page-x ${showHeader ? "" : "safe-top"} ${hideNav ? "page-main-flush" : ""}`}
       >
         {children}
       </main>
 
-      <nav className="bottom-nav">
-        <div className="bottom-nav-inner safe-bottom">
-          <ul className="bottom-nav-list">
-            {NAV.map(({ to, label, icon: Icon }) => {
-              const active =
-                to === "/" ? pathname === "/" : pathname.startsWith(to);
-              return (
-                <li key={to}>
-                  <Link
-                    href={to}
-                    className={`bottom-nav-link ${active ? "active" : ""}`}
-                  >
-                    <Icon size={20} />
-                    <span>{label}</span>
-                    <span className="bottom-nav-indicator" />
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      </nav>
+      {!hideNav && (
+        <nav className="bottom-nav">
+          <div className="bottom-nav-inner safe-bottom">
+            <ul className="bottom-nav-list">
+              {NAV.map(({ to, label, icon: Icon }) => {
+                const active =
+                  to === "/" ? pathname === "/" : pathname.startsWith(to);
+                const showBadge = to === "/chats" && unreadChats > 0;
+                return (
+                  <li key={to}>
+                    <Link
+                      href={to}
+                      className={`bottom-nav-link ${active ? "active" : ""}`}
+                    >
+                      <span className="relative" style={{ display: "grid" }}>
+                        <Icon size={20} />
+                        {showBadge && (
+                          <span className="nav-badge">{unreadChats}</span>
+                        )}
+                      </span>
+                      <span>{label}</span>
+                      <span className="bottom-nav-indicator" />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </nav>
+      )}
     </div>
   );
 }

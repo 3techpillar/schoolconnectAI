@@ -1,51 +1,28 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { PhoneShell } from "@/components/PhoneShell";
+import { useAuth } from "@/lib/auth";
+import {
+  useSchoolData,
+  type HomeworkPriority,
+  type HomeworkStatus,
+} from "@/lib/school-data";
+import { useStudentEngage } from "@/lib/student-engage";
 import {
   Paperclip,
   CheckCircle2,
   Clock,
   AlertTriangle,
+  Plus,
 } from "@/components/Icons";
 
-const items = [
-  {
-    subject: "Math",
-    color: "pill pill-info",
-    title: "Exercise 4.2 — Fractions",
-    due: "Tomorrow",
-    priority: "high",
-    attachments: 1,
-    status: "pending",
-  },
-  {
-    subject: "Science",
-    color: "pill pill-success",
-    title: "Plant cell diagram",
-    due: "Fri, 28 Jun",
-    priority: "medium",
-    attachments: 2,
-    status: "in-progress",
-  },
-  {
-    subject: "English",
-    color: "pill pill-secondary",
-    title: "Read Chapter 7 & answer Qs",
-    due: "Mon, 1 Jul",
-    priority: "low",
-    attachments: 0,
-    status: "pending",
-  },
-  {
-    subject: "Hindi",
-    color: "pill pill-warning",
-    title: "निबंध — मेरा विद्यालय",
-    due: "Yesterday",
-    priority: "high",
-    attachments: 0,
-    status: "submitted",
-  },
-];
+const subjectColor: Record<string, string> = {
+  Math: "pill pill-info",
+  Science: "pill pill-success",
+  English: "pill pill-secondary",
+  Hindi: "pill pill-warning",
+};
 
 const priorityClass: Record<string, string> = {
   high: "priority-high",
@@ -54,38 +31,194 @@ const priorityClass: Record<string, string> = {
 };
 
 export default function HomeworkPage() {
+  const { user } = useAuth();
+  const {
+    homework,
+    addHomework,
+    updateHomeworkStatus,
+    canPostAsTeacher,
+    ready,
+  } = useSchoolData();
+  const { completeMission, awardXp } = useStudentEngage();
+
+  const [filter, setFilter] = useState("All");
+  const [showForm, setShowForm] = useState(false);
+  const [subject, setSubject] = useState("Math");
+  const [title, setTitle] = useState("");
+  const [due, setDue] = useState("Tomorrow");
+  const [priority, setPriority] = useState<HomeworkPriority>("medium");
+
+  const teacher = canPostAsTeacher(user);
+
+  const filtered = useMemo(() => {
+    if (filter === "All") return homework;
+    return homework.filter((h) => h.subject === filter);
+  }, [filter, homework]);
+
+  const counts = useMemo(() => {
+    return {
+      pending: homework.filter((h) => h.status === "pending").length,
+      progress: homework.filter((h) => h.status === "in-progress").length,
+      done: homework.filter(
+        (h) => h.status === "submitted" || h.status === "reviewed",
+      ).length,
+    };
+  }, [homework]);
+
+  const subjects = ["All", "Math", "Science", "English", "Hindi"];
+
+  const onCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !title.trim()) return;
+    addHomework(
+      {
+        subject,
+        title: title.trim(),
+        due,
+        priority,
+        attachments: 0,
+        status: "pending",
+        className: user.className || "6-B",
+        postedBy: user.name,
+      },
+      user,
+    );
+    setTitle("");
+    setShowForm(false);
+  };
+
+  const cycleStatus = (id: string, current: HomeworkStatus) => {
+    if (!user) return;
+    const order: HomeworkStatus[] = [
+      "pending",
+      "in-progress",
+      "submitted",
+      "reviewed",
+    ];
+    const next = order[(order.indexOf(current) + 1) % order.length];
+    updateHomeworkStatus(id, next, user);
+    if (next === "in-progress" || next === "submitted") {
+      completeMission("mission-homework");
+      awardXp(next === "submitted" ? 20 : 10);
+    }
+  };
+
+  if (!ready) {
+    return (
+      <PhoneShell title="Homework" subtitle="Loading">
+        <p className="muted text-sm">Loading…</p>
+      </PhoneShell>
+    );
+  }
+
   return (
-    <PhoneShell subtitle="3 active · 1 submitted" title="Homework">
+    <PhoneShell
+      subtitle={`${counts.pending + counts.progress} active · ${counts.done} done`}
+      title="Homework"
+    >
       <div className="card card-pad summary-3">
-        <Stat label="Pending" value="2" tone="tone-warning" />
-        <Stat label="In progress" value="1" tone="tone-info" />
-        <Stat label="Done" value="1" tone="tone-success" />
+        <Stat label="Pending" value={String(counts.pending)} tone="tone-warning" />
+        <Stat label="In progress" value={String(counts.progress)} tone="tone-info" />
+        <Stat label="Done" value={String(counts.done)} tone="tone-success" />
       </div>
 
-      <div className="chip-row mt-5">
-        {["All", "Math", "Science", "English", "Hindi"].map((t, i) => (
-          <button key={t} className={`chip ${i === 0 ? "active" : ""}`}>
-            {t}
+      <div className="row mt-4" style={{ justifyContent: "space-between", gap: 8 }}>
+        <div className="chip-row" style={{ flex: 1 }}>
+          {subjects.map((t) => (
+            <button
+              key={t}
+              type="button"
+              className={`chip ${filter === t ? "active" : ""}`}
+              onClick={() => setFilter(t)}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+        {teacher && (
+          <button
+            type="button"
+            className="icon-btn muted"
+            aria-label="Add homework"
+            onClick={() => setShowForm((v) => !v)}
+          >
+            <Plus size={18} />
           </button>
-        ))}
+        )}
       </div>
+
+      {teacher && showForm && (
+        <form className="card card-pad mt-3 space-y" onSubmit={onCreate}>
+          <p className="font-semibold text-sm" style={{ margin: 0 }}>
+            Post homework to class
+          </p>
+          <div className="wa-meta-row">
+            <select
+              className="wa-select"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            >
+              {["Math", "Science", "English", "Hindi"].map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+            <select
+              className="wa-select"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as HomeworkPriority)}
+            >
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <input
+            className="input"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Homework title"
+            required
+          />
+          <input
+            className="input"
+            value={due}
+            onChange={(e) => setDue(e.target.value)}
+            placeholder="Due (e.g. Tomorrow)"
+          />
+          <button type="submit" className="btn-primary">
+            Post homework
+          </button>
+        </form>
+      )}
 
       <ul className="feed mt-4">
-        {items.map((it, i) => (
-          <li key={i} style={{ flexDirection: "column", alignItems: "stretch" }}>
+        {filtered.map((it) => (
+          <li key={it.id} style={{ flexDirection: "column", alignItems: "stretch" }}>
             <div className="row" style={{ gap: "0.5rem" }}>
-              <span className={it.color}>{it.subject}</span>
+              <span className={subjectColor[it.subject] || "pill pill-info"}>
+                {it.subject}
+              </span>
               <span className={priorityClass[it.priority]}>
                 {it.priority[0].toUpperCase() + it.priority.slice(1)}
               </span>
               <span
                 className="text-11 muted"
-                style={{ marginLeft: "auto", display: "inline-flex", gap: 4, alignItems: "center" }}
+                style={{
+                  marginLeft: "auto",
+                  display: "inline-flex",
+                  gap: 4,
+                  alignItems: "center",
+                }}
               >
                 <Clock size={12} /> {it.due}
               </span>
             </div>
             <p className="font-medium text-15 mt-2">{it.title}</p>
+            <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
+              Posted by {it.postedBy} · Class {it.className}
+            </p>
             <div className="row mt-2" style={{ justifyContent: "space-between" }}>
               <div className="row text-xs muted" style={{ gap: "0.75rem" }}>
                 {it.attachments > 0 && (
@@ -95,10 +228,21 @@ export default function HomeworkPage() {
                 )}
                 <StatusPill status={it.status} />
               </div>
-              <button className="text-xs font-semibold tone-primary">Open</button>
+              <button
+                type="button"
+                className="text-xs font-semibold tone-primary"
+                onClick={() => cycleStatus(it.id, it.status)}
+              >
+                {teacher ? "Update status" : "Mark progress"}
+              </button>
             </div>
           </li>
         ))}
+        {filtered.length === 0 && (
+          <li className="muted text-sm" style={{ justifyContent: "center" }}>
+            No homework in this filter.
+          </li>
+        )}
       </ul>
     </PhoneShell>
   );
@@ -124,10 +268,10 @@ function Stat({
 }
 
 function StatusPill({ status }: { status: string }) {
-  if (status === "submitted") {
+  if (status === "submitted" || status === "reviewed") {
     return (
       <span className="row tone-success font-medium" style={{ gap: 4 }}>
-        <CheckCircle2 size={14} /> Submitted
+        <CheckCircle2 size={14} /> {status === "reviewed" ? "Reviewed" : "Submitted"}
       </span>
     );
   }

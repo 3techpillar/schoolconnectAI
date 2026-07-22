@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth, ROLE_LABEL, type Role } from "@/lib/auth";
+import { useAuth, ROLE_LABEL, SIGNUP_ROLES, type Role } from "@/lib/auth";
 import { appConfig } from "@/lib/config";
 import {
   ArrowLeft,
@@ -16,14 +16,7 @@ import {
 type Step = "identifier" | "otp" | "profile";
 type Channel = "email" | "phone";
 
-const ROLES: Role[] = [
-  "parent",
-  "student",
-  "class_teacher",
-  "bus_attendant",
-  "principal",
-  "admin",
-];
+const ROLES = SIGNUP_ROLES;
 
 export default function AuthPage() {
   return (
@@ -267,6 +260,10 @@ function AuthPageInner() {
                     </button>
                   ))}
                 </div>
+                <p className="text-11 muted mt-2">
+                  This role is saved permanently for your phone/email. Next
+                  login restores the same role automatically.
+                </p>
               </div>
 
               <label>
