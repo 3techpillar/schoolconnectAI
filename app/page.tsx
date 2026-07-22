@@ -62,23 +62,36 @@ export default function HomePage() {
 
       <section className="quick-grid">
         {[
-          { icon: Phone, label: "Call" },
-          { icon: MessageCircle, label: "Message" },
-          { icon: Wallet, label: "Pay" },
-          { icon: BookOpen, label: "Homework" },
-        ].map(({ icon: Icon, label }) => (
-          <button key={label} className="quick-btn">
-            <Icon size={18} />
-            <span className="text-11 font-medium">{label}</span>
-          </button>
-        ))}
+          { icon: Phone, label: "Call", href: undefined as string | undefined },
+          { icon: MessageCircle, label: "Message", href: undefined },
+          { icon: Wallet, label: "Pay", href: "/fees" },
+          { icon: BookOpen, label: "Homework", href: "/homework" },
+        ].map(({ icon: Icon, label, href }) =>
+          href ? (
+            <Link key={label} href={href} className="quick-btn">
+              <Icon size={18} />
+              <span className="text-11 font-medium">{label}</span>
+            </Link>
+          ) : (
+            <button key={label} className="quick-btn" type="button">
+              <Icon size={18} />
+              <span className="text-11 font-medium">{label}</span>
+            </button>
+          ),
+        )}
       </section>
 
       <h2 className="section-label">Today</h2>
       <section className="stats-grid">
-        <StatCard icon={CalendarCheck} label="Attendance" value="96%" tone="tone-success" hint="This month" />
-        <StatCard icon={Wallet} label="Fees due" value="₹4,200" tone="tone-warning" hint="Due 28 Jun" />
-        <StatCard icon={BookOpen} label="Homework" value="3" tone="tone-info" hint="2 pending" />
+        <Link href="/attendance">
+          <StatCard icon={CalendarCheck} label="Attendance" value="96%" tone="tone-success" hint="This month" />
+        </Link>
+        <Link href="/fees">
+          <StatCard icon={Wallet} label="Fees due" value="₹4,200" tone="tone-warning" hint="Due 28 Jun" />
+        </Link>
+        <Link href="/homework">
+          <StatCard icon={BookOpen} label="Homework" value="3" tone="tone-info" hint="2 pending" />
+        </Link>
         <Link href="/bus">
           <StatCard icon={Bus} label="Bus ETA" value="8 min" tone="tone-primary" hint="Route 12 · live" />
         </Link>
@@ -102,6 +115,7 @@ export default function HomePage() {
       <h2 className="section-label">Recent</h2>
       <ul className="feed">
         <FeedItem
+          href="/circulars"
           icon={Megaphone}
           tone="tone-secondary"
           title="Annual Sports Day on 5 July"
@@ -109,6 +123,7 @@ export default function HomePage() {
           badge={{ label: "New", className: "badge badge-secondary" }}
         />
         <FeedItem
+          href="/homework"
           icon={BookOpen}
           tone="tone-info"
           title="Math: Complete exercise 4.2"
@@ -122,6 +137,7 @@ export default function HomePage() {
           meta="Approved by Ms. Kapoor · Yesterday"
         />
         <FeedItem
+          href="/fees"
           icon={AlertCircle}
           tone="tone-warning"
           title="Term fee reminder"
@@ -165,15 +181,17 @@ function FeedItem({
   title,
   meta,
   badge,
+  href,
 }: {
   icon: (p: { size?: number }) => React.ReactNode;
   tone: string;
   title: string;
   meta: string;
   badge?: { label: string; className: string };
+  href?: string;
 }) {
-  return (
-    <li>
+  const content = (
+    <>
       <span className={tone}>
         <Icon size={18} />
       </span>
@@ -182,6 +200,18 @@ function FeedItem({
         <p className="text-11 muted mt-1">{meta}</p>
       </div>
       {badge && <span className={badge.className}>{badge.label}</span>}
+    </>
+  );
+
+  return (
+    <li>
+      {href ? (
+        <Link href={href} className="row" style={{ color: "inherit", width: "100%" }}>
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
     </li>
   );
 }

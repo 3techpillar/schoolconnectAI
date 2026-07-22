@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { appConfig } from "@/lib/config";
 
 export type Role =
   | "parent"
@@ -39,7 +40,7 @@ export interface UserProfile {
 
 const STORAGE_KEY = "sc_auth_user_v1";
 const USERS_KEY = "sc_users_v1";
-const OTP_FIXED = "000000";
+const OTP_FIXED = appConfig.demoOtp;
 
 interface AuthCtx {
   user: UserProfile | null;
@@ -97,7 +98,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true };
     },
     async verifyOtp(identifier, otp) {
-      if (otp !== OTP_FIXED) throw new Error("Invalid OTP. Use 000000 for demo.");
+      if (otp !== OTP_FIXED) {
+        throw new Error(`Invalid OTP. Use ${OTP_FIXED} for demo.`);
+      }
       const users = loadUsers();
       const existing = users[identifier.toLowerCase()];
       if (existing) {

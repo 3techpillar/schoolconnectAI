@@ -80,7 +80,10 @@ export function PhoneShell({
                     <span className="dot-warn" />
                   </button>
                   <button
-                    onClick={() => logout()}
+                    onClick={() => {
+                      logout();
+                      router.replace("/auth");
+                    }}
                     aria-label="Sign out"
                     title={`Sign out (${user.name})`}
                     className={`icon-btn ${isPrimary ? "on-primary" : "muted"}`}

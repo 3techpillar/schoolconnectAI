@@ -60,15 +60,7 @@ export default function BusTrackingPage() {
               </p>
             </div>
             <span className="live-pill">
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 999,
-                  background: "var(--success)",
-                }}
-              />{" "}
-              LIVE
+              <span className="pulse-dot" /> LIVE
             </span>
           </div>
         </div>
@@ -172,7 +164,7 @@ export default function BusTrackingPage() {
                 return (
                   <li key={s.id} className="row" style={{ alignItems: "stretch", gap: 12 }}>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                      <span className={`stop-dot ${s.status}`} />
+                      <span className={`stop-dot ${s.status}${isCurrent ? " pulse" : ""}`} />
                       {i < STOPS.length - 1 && (
                         <span className={`stop-line ${isDone ? "done" : ""}`} />
                       )}
@@ -294,6 +286,13 @@ function MapCanvas({ progress }: { progress: number }) {
         <line x1="80" y1="0" x2="60" y2="600" />
         <line x1="220" y1="0" x2="240" y2="600" />
       </g>
+      <g stroke="oklch(0.88 0.01 250)" strokeWidth="1.2" opacity="0.9">
+        <line x1="0" y1="120" x2="360" y2="100" />
+        <line x1="0" y1="260" x2="360" y2="280" />
+        <line x1="0" y1="430" x2="360" y2="445" />
+        <line x1="80" y1="0" x2="60" y2="600" />
+        <line x1="220" y1="0" x2="240" y2="600" />
+      </g>
 
       <g fill="oklch(0.93 0.01 250)" stroke="oklch(0.88 0.01 250)" strokeWidth="0.8">
         <rect x="20" y="50" width="40" height="35" rx="3" />
@@ -335,6 +334,19 @@ function MapCanvas({ progress }: { progress: number }) {
               stroke={isDone ? "oklch(0.72 0.16 160)" : "oklch(0.56 0.22 265)"}
               strokeWidth="2.5"
             />
+            {isCurrent && (
+              <circle
+                cx={s.x}
+                cy={s.y}
+                r="9"
+                fill="none"
+                stroke="oklch(0.56 0.22 265)"
+                strokeWidth="2"
+              >
+                <animate attributeName="r" from="9" to="22" dur="1.6s" repeatCount="indefinite" />
+                <animate attributeName="opacity" from="0.6" to="0" dur="1.6s" repeatCount="indefinite" />
+              </circle>
+            )}
           </g>
         );
       })}

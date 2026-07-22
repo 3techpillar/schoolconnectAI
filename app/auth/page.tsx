@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, ROLE_LABEL, type Role } from "@/lib/auth";
+import { appConfig } from "@/lib/config";
 import {
   ArrowLeft,
   Mail,
@@ -25,7 +26,17 @@ const ROLES: Role[] = [
 ];
 
 export default function AuthPage() {
+  return (
+    <Suspense fallback={<div className="app-shell" />}>
+      <AuthPageInner />
+    </Suspense>
+  );
+}
+
+function AuthPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect") || "/";
   const { user, ready, sendOtp, verifyOtp, completeRegistration } = useAuth();
 
   const [channel, setChannel] = useState<Channel>("phone");
@@ -41,8 +52,8 @@ export default function AuthPage() {
   const [childName, setChildName] = useState("");
 
   useEffect(() => {
-    if (ready && user) router.replace("/");
-  }, [ready, user, router]);
+    if (ready && user) router.replace(redirectTo);
+  }, [ready, user, router, redirectTo]);
 
   const submitIdentifier = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +80,7 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const res = await verifyOtp(identifier, otp);
-      if (res.existing) router.replace("/");
+      if (res.existing) router.replace(redirectTo);
       else setStep("profile");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed");
@@ -93,7 +104,7 @@ export default function AuthPage() {
       className: className.trim() || undefined,
       childName: childName.trim() || undefined,
     });
-    router.replace("/");
+    router.replace(redirectTo);
   };
 
   const needsClass =
@@ -180,7 +191,9 @@ export default function AuthPage() {
               <div className="demo-note">
                 <ShieldCheck size={16} className="tone-primary" />
                 Demo mode — use OTP{" "}
-                <strong style={{ color: "var(--foreground)" }}>000000</strong>{" "}
+                <strong style={{ color: "var(--foreground)" }}>
+                  {appConfig.demoOtp}
+                </strong>{" "}
                 to sign in.
               </div>
             </form>
@@ -216,7 +229,9 @@ export default function AuthPage() {
               </button>
               <p className="text-xs muted" style={{ textAlign: "center" }}>
                 Demo OTP:{" "}
-                <strong style={{ color: "var(--foreground)" }}>000000</strong>
+                <strong style={{ color: "var(--foreground)" }}>
+                  {appConfig.demoOtp}
+                </strong>
               </p>
             </form>
           )}

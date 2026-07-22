@@ -26,6 +26,13 @@ pnpm-debug.log*
 *.local
 .env*.local
 
+# keep shared env templates tracked
+!.env.example
+!.env.development
+!.env.staging
+!.env.production
+
+
 # editor
 .vscode/*
 !.vscode/extensions.json
