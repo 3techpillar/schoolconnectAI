@@ -9,7 +9,7 @@
     "build:production": "APP_ENV=production NEXT_PUBLIC_APP_ENV=production next build",
     "start": "next start",
     "start:staging": "APP_ENV=staging NEXT_PUBLIC_APP_ENV=staging next start -p 3001",
-    "start:production": "APP_ENV=production NEXT_PUBLIC_APP_ENV=production next start -p 3000",
+    "start:production": "APP_ENV=production NEXT_PUBLIC_APP_ENV=production next start -p 4002",
     "docker:build": "docker build -t schoolconnect:local .",
     "docker:run": "docker run --rm -p 3000:3000 schoolconnect:local"
   },
