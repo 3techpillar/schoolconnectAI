@@ -1,0 +1,73 @@
+name: CI/CD SchoolConnect Frontend
+
+on:
+  push:
+    branches:
+      - stage
+      - main
+
+jobs:
+  # ── Stage & Main: Build Validation ──
+  build-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Application
+        run: npm run build
+
+  # ── Main: Deploy to Production VPS ──
+  deploy:
+    needs: build-check
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+
+          command_timeout: 30m
+
+          script: |
+            set -e
+
+            APP_DIR="/var/www/schoolconnectAI"
+
+            echo "Entering Application Directory..."
+            cd $APP_DIR
+
+            echo "Fetching latest code..."
+            git fetch origin
+
+            echo "Resetting to latest main branch..."
+            git reset --hard origin/main
+
+            echo "Installing dependencies..."
+            npm ci
+
+            echo "Building production..."
+            npm run build:production
+
+            echo "Restarting PM2..."
+            pm2 restart schoolconnect-production || pm2 start npm --name "schoolconnect-production" -- start:production
+
+            echo "Saving PM2 process list..."
+            pm2 save
+
+            echo "Deployment Successful!"
