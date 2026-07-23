@@ -114,6 +114,15 @@ export function PhoneShell({
                     <Bell size={18} />
                     {unreadNotifications > 0 && <span className="dot-warn" />}
                   </Link>
+                  <Link
+                    href="/profile"
+                    aria-label="Profile & leaves"
+                    title="Profile"
+                    className={`icon-btn ${isPrimary ? "on-primary" : "muted"}`}
+                    style={{ fontSize: 12, fontWeight: 800 }}
+                  >
+                    {(user.name || "?").charAt(0).toUpperCase()}
+                  </Link>
                   <button
                     onClick={() => {
                       logout();

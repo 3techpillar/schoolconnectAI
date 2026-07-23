@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth, ROLE_LABEL, SIGNUP_ROLES, type Role } from "@/lib/auth";
 import { appConfig } from "@/lib/config";
+import { WelcomeHints, WelcomeSketch } from "@/components/WelcomeSketch";
 import {
   ArrowLeft,
   Mail,
@@ -13,7 +14,7 @@ import {
   ShieldCheck,
 } from "@/components/Icons";
 
-type Step = "identifier" | "otp" | "profile";
+type Step = "welcome" | "identifier" | "otp" | "profile";
 type Channel = "email" | "phone";
 
 const ROLES = SIGNUP_ROLES;
@@ -35,7 +36,7 @@ function AuthPageInner() {
   const [channel, setChannel] = useState<Channel>("phone");
   const [identifier, setIdentifier] = useState("");
   const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<Step>("identifier");
+  const [step, setStep] = useState<Step>("welcome");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -43,10 +44,36 @@ function AuthPageInner() {
   const [school, setSchool] = useState("");
   const [className, setClassName] = useState("");
   const [childName, setChildName] = useState("");
+  const [showTourOnLoad, setShowTourOnLoad] = useState(true);
 
   useEffect(() => {
     if (ready && user) router.replace(redirectTo);
   }, [ready, user, router, redirectTo]);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("sc_skip_welcome_tour_v1") === "1") {
+        setShowTourOnLoad(false);
+        setStep("identifier");
+      }
+    } catch {
+      /* noop */
+    }
+  }, []);
+
+  const skipTour = () => {
+    try {
+      localStorage.setItem("sc_skip_welcome_tour_v1", "1");
+    } catch {
+      /* noop */
+    }
+    setShowTourOnLoad(false);
+    setStep("identifier");
+  };
+
+  const startLogin = () => {
+    setStep("identifier");
+  };
 
   const submitIdentifier = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,16 +131,30 @@ function AuthPageInner() {
     role === "class_teacher" || role === "student" || role === "parent";
   const needsChild = role === "parent";
 
+  const goBack = () => {
+    setError(null);
+    if (step === "profile") setStep("otp");
+    else if (step === "otp") setStep("identifier");
+    else if (step === "identifier" && showTourOnLoad) setStep("welcome");
+  };
+
+  const title =
+    step === "welcome"
+      ? "Welcome"
+      : step === "identifier"
+        ? "Sign in"
+        : step === "otp"
+          ? "Verify OTP"
+          : "Complete setup";
+
   return (
-    <div className="app-shell">
-      <header className="header-primary safe-top page-x" style={{ paddingBottom: "1.5rem" }}>
+    <div className="app-shell auth-shell">
+      <header className="auth-hero safe-top page-x">
+        <div className="auth-hero-glow" aria-hidden />
         <div className="header-row">
-          {step !== "identifier" && (
+          {step !== "welcome" && (
             <button
-              onClick={() => {
-                setStep(step === "profile" ? "otp" : "identifier");
-                setError(null);
-              }}
+              onClick={goBack}
               className="icon-btn on-primary"
               aria-label="Back"
               style={{ width: 36, height: 36 }}
@@ -122,26 +163,66 @@ function AuthPageInner() {
             </button>
           )}
           <div className="grow">
-            <p className="header-sub">SchoolConnect AI</p>
-            <h1 className="header-title">
-              {step === "identifier"
-                ? "Welcome"
-                : step === "otp"
-                  ? "Verify OTP"
-                  : "Complete setup"}
-            </h1>
+            <div className="auth-brand">
+              <span className="auth-logo-mark" aria-hidden>
+                <GraduationCap size={16} />
+              </span>
+              <p className="header-sub" style={{ margin: 0, opacity: 0.9 }}>
+                SchoolConnect
+              </p>
+            </div>
+            <h1 className="header-title">{title}</h1>
           </div>
-          <Sparkles size={20} style={{ opacity: 0.7 }} />
+          <Sparkles size={20} style={{ opacity: 0.75 }} />
         </div>
+        {step === "welcome" && (
+          <p className="auth-lead">
+            One tap for bus, attendance, fees &amp; school chat — built for
+            parents, teachers and admins.
+          </p>
+        )}
       </header>
 
-      <main className="page-x" style={{ paddingTop: "1.5rem", paddingBottom: "2.5rem" }}>
+      <main className="page-x auth-main">
         <div className="max-md">
+          {step === "welcome" && (
+            <div className="space-y auth-welcome">
+              <WelcomeSketch />
+              <WelcomeHints />
+
+              <div className="auth-cta-row">
+                <button type="button" className="btn-primary" onClick={startLogin}>
+                  Get started
+                </button>
+                <button type="button" className="btn-secondary" onClick={skipTour}>
+                  Skip tutorial
+                </button>
+              </div>
+
+              <div className="demo-note">
+                <ShieldCheck size={16} className="tone-primary" />
+                Interactive demo — OTP{" "}
+                <strong style={{ color: "var(--foreground)" }}>
+                  {appConfig.demoOtp}
+                </strong>{" "}
+                works for any phone or email.
+              </div>
+            </div>
+          )}
+
           {step === "identifier" && (
             <form onSubmit={submitIdentifier} className="space-y">
+              <button
+                type="button"
+                className="auth-replay"
+                onClick={() => setStep("welcome")}
+              >
+                ▶ Replay how it works
+              </button>
+
               <p className="text-sm muted">
-                Sign in or create an account. One app for parents, teachers,
-                staff and admins.
+                Sign in or create an account. Your role is saved after first
+                setup.
               </p>
 
               <div className="channel-toggle">
@@ -180,6 +261,8 @@ function AuthPageInner() {
               <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? "Sending…" : "Send OTP"}
               </button>
+
+              <WelcomeHints />
 
               <div className="demo-note">
                 <ShieldCheck size={16} className="tone-primary" />

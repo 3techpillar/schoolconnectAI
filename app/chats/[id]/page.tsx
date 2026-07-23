@@ -12,6 +12,7 @@ import {
   type MessageKind,
 } from "@/lib/school-data";
 import { useStudentEngage, REACTION_EMOJIS } from "@/lib/student-engage";
+import { addDaysIso, toIsoDate } from "@/lib/dates";
 import { ArrowLeft, Send, BookOpen, CalendarCheck, Sparkles } from "@/components/Icons";
 
 export default function ChatThreadPage() {
@@ -33,7 +34,7 @@ export default function ChatThreadPage() {
   const [text, setText] = useState("");
   const [kind, setKind] = useState<MessageKind>("text");
   const [subject, setSubject] = useState("Math");
-  const [due, setDue] = useState("Tomorrow");
+  const [due, setDue] = useState(addDaysIso(toIsoDate(), 2));
   const [reactFor, setReactFor] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const teacher = canPostAsTeacher(user);
@@ -122,7 +123,9 @@ export default function ChatThreadPage() {
                   <div className="wa-card-tag hw">
                     <BookOpen size={12} /> Homework
                     {m.meta?.subject ? ` · ${m.meta.subject}` : ""}
-                    {m.meta?.due ? ` · Due ${m.meta.due}` : ""}
+                    {m.meta?.due
+                      ? ` · Submit by ${/^\d{4}-\d{2}-\d{2}$/.test(m.meta.due) ? m.meta.due : m.meta.due}`
+                      : ""}
                   </div>
                 )}
                 {m.kind === "progress" && (
@@ -210,10 +213,12 @@ export default function ChatThreadPage() {
             </select>
             {kind === "homework" && (
               <input
+                type="date"
                 className="wa-select"
                 value={due}
+                min={toIsoDate()}
                 onChange={(e) => setDue(e.target.value)}
-                placeholder="Due"
+                aria-label="Submission deadline"
               />
             )}
           </div>

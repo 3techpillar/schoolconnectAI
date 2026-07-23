@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   Plus,
 } from "@/components/Icons";
+import { addDaysIso, formatDueLabel, isDueOverdue, toIsoDate } from "@/lib/dates";
 
 const subjectColor: Record<string, string> = {
   Math: "pill pill-info",
@@ -45,7 +46,7 @@ export default function HomeworkPage() {
   const [showForm, setShowForm] = useState(false);
   const [subject, setSubject] = useState("Math");
   const [title, setTitle] = useState("");
-  const [due, setDue] = useState("Tomorrow");
+  const [dueDate, setDueDate] = useState(addDaysIso(toIsoDate(), 2));
   const [priority, setPriority] = useState<HomeworkPriority>("medium");
 
   const teacher = canPostAsTeacher(user);
@@ -62,6 +63,7 @@ export default function HomeworkPage() {
       done: homework.filter(
         (h) => h.status === "submitted" || h.status === "reviewed",
       ).length,
+      overdue: homework.filter((h) => isDueOverdue(h.dueDate, h.status)).length,
     };
   }, [homework]);
 
@@ -69,12 +71,13 @@ export default function HomeworkPage() {
 
   const onCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !title.trim()) return;
+    if (!user || !title.trim() || !dueDate) return;
     addHomework(
       {
         subject,
         title: title.trim(),
-        due,
+        dueDate,
+        due: formatDueLabel(dueDate),
         priority,
         attachments: 0,
         status: "pending",
@@ -84,6 +87,7 @@ export default function HomeworkPage() {
       user,
     );
     setTitle("");
+    setDueDate(addDaysIso(toIsoDate(), 2));
     setShowForm(false);
   };
 
@@ -112,8 +116,8 @@ export default function HomeworkPage() {
   }
 
   return (
-    <PhoneShell
-      subtitle={`${counts.pending + counts.progress} active · ${counts.done} done`}
+      <PhoneShell
+      subtitle={`${counts.pending + counts.progress} active · ${counts.overdue} overdue`}
       title="Homework"
     >
       <div className="card card-pad summary-3">
@@ -181,12 +185,20 @@ export default function HomeworkPage() {
             placeholder="Homework title"
             required
           />
-          <input
-            className="input"
-            value={due}
-            onChange={(e) => setDue(e.target.value)}
-            placeholder="Due (e.g. Tomorrow)"
-          />
+          <label>
+            <span className="text-xs font-medium muted">Submission deadline</span>
+            <input
+              type="date"
+              className="input"
+              value={dueDate}
+              min={toIsoDate()}
+              onChange={(e) => setDueDate(e.target.value)}
+              required
+            />
+          </label>
+          <p className="text-11 muted" style={{ margin: 0 }}>
+            Shows as: <strong>{formatDueLabel(dueDate)}</strong> ({dueDate})
+          </p>
           <button type="submit" className="btn-primary">
             Post homework
           </button>
@@ -194,7 +206,9 @@ export default function HomeworkPage() {
       )}
 
       <ul className="feed mt-4">
-        {filtered.map((it) => (
+        {filtered.map((it) => {
+          const overdue = isDueOverdue(it.dueDate, it.status);
+          return (
           <li key={it.id} style={{ flexDirection: "column", alignItems: "stretch" }}>
             <div className="row" style={{ gap: "0.5rem" }}>
               <span className={subjectColor[it.subject] || "pill pill-info"}>
@@ -204,7 +218,7 @@ export default function HomeworkPage() {
                 {it.priority[0].toUpperCase() + it.priority.slice(1)}
               </span>
               <span
-                className="text-11 muted"
+                className={`text-11 ${overdue ? "tone-destructive font-semibold" : "muted"}`}
                 style={{
                   marginLeft: "auto",
                   display: "inline-flex",
@@ -212,12 +226,23 @@ export default function HomeworkPage() {
                   alignItems: "center",
                 }}
               >
-                <Clock size={12} /> {it.due}
+                <Clock size={12} />
+                {overdue ? "Overdue · " : "Due "}
+                {it.due}
               </span>
             </div>
             <p className="font-medium text-15 mt-2">{it.title}</p>
             <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
-              Posted by {it.postedBy} · Class {it.className}
+              Submit by{" "}
+              <strong style={{ color: "var(--foreground)" }}>
+                {it.dueDate
+                  ? new Date(it.dueDate + "T12:00:00").toLocaleDateString(
+                      undefined,
+                      { day: "numeric", month: "short", year: "numeric" },
+                    )
+                  : it.due}
+              </strong>
+              {" · "}Posted by {it.postedBy} · Class {it.className}
             </p>
             <div className="row mt-2" style={{ justifyContent: "space-between" }}>
               <div className="row text-xs muted" style={{ gap: "0.75rem" }}>
@@ -237,7 +262,8 @@ export default function HomeworkPage() {
               </button>
             </div>
           </li>
-        ))}
+          );
+        })}
         {filtered.length === 0 && (
           <li className="muted text-sm" style={{ justifyContent: "center" }}>
             No homework in this filter.

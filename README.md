@@ -36,8 +36,9 @@ Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI 
 | **Student Zone** | XP/levels, streaks, mood check-in, daily missions, focus timer, weekly challenge, badges |
 | **Chats** | WhatsApp-style threads + emoji reactions. Teachers post daily activity, homework & progress |
 | **Notifications** | Unread alerts for homework, activity, progress, fees, circulars |
-| **Homework** | Filter, status updates; teachers can post new homework to class chat |
-| **Attendance** | Monthly % + calendar (Present / Absent / Leave / Half) |
+| **Homework** | Filter, status updates; teachers post with **submission deadline**; overdue highlighted |
+| **Attendance** | Calendar + leave history; approved leaves show as **L**; teachers approve pending leaves |
+| **Profile** | Account info + **apply leave** + leave history |
 | **Fees** | Outstanding amount, Pay now UI, payment history + receipts |
 | **Circulars** | School notices/events feed with filters and bookmarks |
 | **Bus tracking** | Simulated live map, ETA, driver card, route stops |

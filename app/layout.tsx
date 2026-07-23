@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AuthProvider } from "@/lib/auth";
 import { AdminDataProvider } from "@/lib/admin-data";
+import { LeavesProvider } from "@/lib/leaves";
 import { SchoolDataProvider } from "@/lib/school-data";
 import { StudentEngageProvider } from "@/lib/student-engage";
 import { TeacherClassProvider } from "@/lib/teacher-class";
@@ -41,7 +42,9 @@ export default function RootLayout({
           <SchoolDataProvider>
             <TeacherClassProvider>
               <StudentEngageProvider>
-                <AdminDataProvider>{children}</AdminDataProvider>
+                <LeavesProvider>
+                  <AdminDataProvider>{children}</AdminDataProvider>
+                </LeavesProvider>
               </StudentEngageProvider>
             </TeacherClassProvider>
           </SchoolDataProvider>

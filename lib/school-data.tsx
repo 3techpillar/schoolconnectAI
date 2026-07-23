@@ -10,6 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import type { Role, UserProfile } from "@/lib/auth";
+import { addDaysIso, formatDueLabel, toIsoDate } from "@/lib/dates";
 
 export type MessageKind =
   | "text"
@@ -66,7 +67,10 @@ export interface HomeworkItem {
   id: string;
   subject: string;
   title: string;
+  /** Human label e.g. Tomorrow — derived from dueDate when possible */
   due: string;
+  /** ISO submission deadline YYYY-MM-DD */
+  dueDate?: string;
   priority: HomeworkPriority;
   attachments: number;
   status: HomeworkStatus;
@@ -326,12 +330,18 @@ function seedNotifications(): AppNotification[] {
 
 function seedHomework(): HomeworkItem[] {
   const now = Date.now();
+  const today = toIsoDate();
+  const d1 = addDaysIso(today, 1);
+  const d2 = addDaysIso(today, 4);
+  const d3 = addDaysIso(today, 7);
+  const d0 = addDaysIso(today, -1);
   return [
     {
       id: "hw1",
       subject: "Math",
       title: "Exercise 4.2 — Fractions",
-      due: "Tomorrow",
+      due: formatDueLabel(d1),
+      dueDate: d1,
       priority: "high",
       attachments: 1,
       status: "pending",
@@ -343,7 +353,8 @@ function seedHomework(): HomeworkItem[] {
       id: "hw2",
       subject: "Science",
       title: "Plant cell diagram",
-      due: "Fri, 28 Jun",
+      due: formatDueLabel(d2),
+      dueDate: d2,
       priority: "medium",
       attachments: 2,
       status: "in-progress",
@@ -355,7 +366,8 @@ function seedHomework(): HomeworkItem[] {
       id: "hw3",
       subject: "English",
       title: "Read Chapter 7 & answer Qs",
-      due: "Mon, 1 Jul",
+      due: formatDueLabel(d3),
+      dueDate: d3,
       priority: "low",
       attachments: 0,
       status: "pending",
@@ -367,7 +379,8 @@ function seedHomework(): HomeworkItem[] {
       id: "hw4",
       subject: "Hindi",
       title: "निबंध — मेरा विद्यालय",
-      due: "Yesterday",
+      due: formatDueLabel(d0),
+      dueDate: d0,
       priority: "high",
       attachments: 0,
       status: "submitted",
@@ -387,6 +400,17 @@ function loadJson<T>(key: string, fallback: T): T {
   } catch {
     return fallback;
   }
+}
+
+function normalizeHomework(items: HomeworkItem[]): HomeworkItem[] {
+  return items.map((h) => {
+    const dueDate = h.dueDate || undefined;
+    return {
+      ...h,
+      dueDate,
+      due: dueDate ? formatDueLabel(dueDate, h.due) : h.due,
+    };
+  });
 }
 
 function saveJson(key: string, value: unknown) {
@@ -415,12 +439,12 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
       setChats(c);
       setMessagesByChat(m);
       setNotifications(n);
-      setHomework(h);
+      setHomework(normalizeHomework(h));
     } else {
       setChats(loadJson(CHATS_KEY, seedChats()));
       setMessagesByChat(loadJson(MSGS_KEY, seedMessages()));
       setNotifications(loadJson(NOTIF_KEY, seedNotifications()));
-      setHomework(loadJson(HW_KEY, seedHomework()));
+      setHomework(normalizeHomework(loadJson(HW_KEY, seedHomework())));
     }
     setReady(true);
   }, []);
@@ -489,11 +513,16 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
       }
 
       if (syncHomework && kind === "homework" && meta?.subject) {
+        const dueDate =
+          meta.due && /^\d{4}-\d{2}-\d{2}$/.test(meta.due)
+            ? meta.due
+            : addDaysIso(toIsoDate(), 2);
         const hw: HomeworkItem = {
           id: crypto.randomUUID(),
           subject: meta.subject,
           title: trimmed.replace(/^Homework posted:\s*/i, ""),
-          due: meta.due || "This week",
+          dueDate,
+          due: formatDueLabel(dueDate, meta.due || "This week"),
           priority: "medium",
           attachments: 0,
           status: meta.status || "pending",
@@ -537,8 +566,15 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
 
   const addHomework = useCallback(
     (item: Omit<HomeworkItem, "id" | "createdAt">, user: UserProfile) => {
+      const dueDate =
+        item.dueDate ||
+        (item.due && /^\d{4}-\d{2}-\d{2}$/.test(item.due)
+          ? item.due
+          : addDaysIso(toIsoDate(), 2));
       const hw: HomeworkItem = {
         ...item,
+        dueDate,
+        due: formatDueLabel(dueDate, item.due),
         id: crypto.randomUUID(),
         createdAt: Date.now(),
       };
@@ -573,7 +609,7 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
           {
             id: crypto.randomUUID(),
             title: `New homework · ${hw.subject}`,
-            body: `${hw.title} · Due ${hw.due}`,
+            body: `${hw.title} · Submit by ${hw.due}${hw.dueDate ? ` (${hw.dueDate})` : ""}`,
             createdAt: Date.now(),
             read: false,
             type: "homework",
