@@ -183,7 +183,7 @@ function AuthPageInner() {
 
               <div className="demo-note">
                 <ShieldCheck size={16} className="tone-primary" />
-                Demo mode — use OTP{" "}
+               Test mode — use OTP{" "}
                 <strong style={{ color: "var(--foreground)" }}>
                   {appConfig.demoOtp}
                 </strong>{" "}
