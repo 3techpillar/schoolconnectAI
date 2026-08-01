@@ -10,18 +10,33 @@
     "start": "next start",
     "start:staging": "APP_ENV=staging NEXT_PUBLIC_APP_ENV=staging next start -p 3001",
     "start:production": "APP_ENV=production NEXT_PUBLIC_APP_ENV=production next start -p 4002",
-    "docker:build": "docker build -t schoolconnect:local .",
-    "docker:run": "docker run --rm -p 3000:3000 schoolconnect:local"
+    "docker:build": "docker build -f deploy/Dockerfile -t schoolconnect:local .",
+    "docker:run": "docker run --rm -p 3000:3000 --env-file .env schoolconnect:local",
+    "docker:up": "docker compose -f deploy/compose.yml up -d --build",
+    "docker:down": "docker compose -f deploy/compose.yml down",
+    "seed": "tsx scripts/seed.ts",
+    "lint": "eslint . --max-warnings 20",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
+    "jose": "^6.2.6",
+    "mongoose": "^9.9.1",
     "next": "^15.5.2",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^22.17.2",
+    "@eslint/eslintrc": "^3.3.6",
+    "@types/node": "^22.20.1",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
-    "typescript": "^5.9.2"
+    "@vitejs/plugin-react": "^6.0.5",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^15.5.2",
+    "tsx": "^4.23.1",
+    "typescript": "^5.9.2",
+    "vitest": "^4.1.10"
   }
 }

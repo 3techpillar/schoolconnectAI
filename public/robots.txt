@@ -1,0 +1,15 @@
+# Crawl hints only — NOT access control / security.
+# Bots that ignore robots.txt can still hit these URLs.
+# Real security: JWT cookie, HTTPS, firewall, strong JWT_SECRET, Atlas IP allowlist.
+
+User-agent: *
+Disallow: /api/
+Disallow: /admin
+Disallow: /auth
+Disallow: /pending
+Disallow: /profile
+Allow: /
+
+# Optional: block all indexing on a private/demo host
+# User-agent: *
+# Disallow: /

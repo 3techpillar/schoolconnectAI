@@ -3,7 +3,18 @@
 WhatsApp-first school communication app for parents, teachers, staff, and admins.
 Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI assistant — all in a mobile-first UI.
 
-> **Note:** This is a UI / demo product. Auth and data are client-side (`localStorage`). There is no real backend, payment gateway, WhatsApp API, or AI model yet.
+> **Backend:** Next.js `src/app/api` + **MongoDB (Mongoose)** + JWT cookie sessions.  
+> When `MONGO_URI` / `MONGODB_URI` is set and reachable, the app is **API-dependent**.  
+> Without Mongo, providers fall back to browser `localStorage` (offline / UI-only demo).
+
+More detail:
+
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — source layout, layers, providers, services, route map
+- **[docs/BACKEND.md](docs/BACKEND.md)** — API map + models
+- **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)** — per-role access, admin, feature matrix
+- **[docs/NEXT-TASKS.md](docs/NEXT-TASKS.md)** — ordered next sprint (current priorities)
+- **[docs/DEPLOY.md](docs/DEPLOY.md)** — custom VPS / Docker
+- **[docs/BACKLOG.md](docs/BACKLOG.md)** — full backlog history + open advanced items
 
 ---
 
@@ -15,12 +26,16 @@ Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI 
 4. [Requirements](#requirements)
 5. [Environments](#environments)
 6. [Local development](#local-development)
-7. [Staging](#staging)
-8. [Production](#production)
-9. [Deployment](#deployment)
-10. [Demo login](#demo-login)
-11. [Important instructions](#important-instructions)
-12. [Scripts reference](#scripts-reference)
+7. [MongoDB setup & seed](#mongodb-setup--seed)
+8. [Demo accounts](#demo-accounts)
+9. [Staging](#staging)
+10. [Production](#production)
+11. [Deployment](#deployment)
+12. [Important instructions](#important-instructions)
+13. [Scripts reference](#scripts-reference)
+14. [Architecture docs](#architecture-docs)
+15. [Roles & features](#roles--features)
+16. [Next tasks & backlog](#next-tasks--backlog)
 
 ---
 
@@ -28,26 +43,24 @@ Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI 
 
 | Area | What it does |
 |------|----------------|
-| **Auth** | Phone or email → OTP → profile setup (role, school, class, child). Role is saved permanently for that identity |
-| **Home** | Role-aware dashboards for parent, student, teacher, admin |
-| **School Admin** | Users & roles, annual grade promotion, academic sessions, school overview (`/admin`) |
-| **Super Admin** | Multi-school activate/pause, assign School Admin / Super Admin, plus all admin tools |
-| **Teacher Class Desk** | Roster, quick attendance marks, daily activity post, parent DMs, announcements |
-| **Student Zone** | XP/levels, streaks, mood check-in, daily missions, focus timer, weekly challenge, badges |
-| **Chats** | WhatsApp-style threads + emoji reactions. Teachers post daily activity, homework & progress |
-| **Notifications** | Unread alerts for homework, activity, progress, fees, circulars |
-| **Homework** | Filter, status updates; teachers post with **submission deadline**; overdue highlighted |
-| **Attendance** | Calendar + leave history; approved leaves show as **L**; teachers approve pending leaves |
-| **Profile** | Account info + **apply leave** + leave history |
-| **Fees** | Outstanding amount, Pay now UI, payment history + receipts |
-| **Circulars** | School notices/events feed with filters and bookmarks |
-| **Bus tracking** | Simulated live map, ETA, driver card, route stops |
-| **AI assistant** | Chat-style UI with suggestions and composer (mock replies) |
-| **Shell** | Mobile phone shell, role-based bottom nav |
+| **Auth** | Phone or email → OTP → profile. Role persisted. Teachers need admin invite code |
+| **Enrollment** | Admin invites teachers; admin/class teacher add students; students wait on `/pending` |
+| **Home** | Role-aware dashboards (family / teacher / admin) |
+| **School Admin** | Users & roles, annual grade promotion, sessions (`/admin`) |
+| **Super Admin** | Multi-school activate/pause + all admin tools |
+| **Teacher Class Desk** | Roster, attendance P/A/L/H, daily activity, parent DMs |
+| **Learning Zone** | XP, streaks, mood, missions, focus timer, badges (`/engage`) — parent & student |
+| **Chats** | WhatsApp-style threads; teachers post activity / homework / progress |
+| **Notifications** | Homework, activity, progress, fees, circulars, bus |
+| **Homework** | Deadlines, status updates, overdue highlight |
+| **Attendance / Leaves** | Calendar; approved leaves as **L**; teachers approve leaves |
+| **Fees** | Outstanding + Pay UI (demo) |
+| **Circulars** | School notices (staff publish) |
+| **Bus tracking** | Live ETA, stops between pickup, alerts at **10 min** and **5 min** |
+| **AI assistant** | In-app school Q&A |
 
-**Visual theme:** Colors, fonts (**Sora** + **Inter**), shadows, and motion timing match `schoolsetu-demo.html` (blue `#2563EB`, paper `#F7F9FD`, ink `#0F172A`, 0.18s UI / 0.5s feed / 0.7s reveal).
-
-**Roles supported in signup:** Parent, Student, Class Teacher, Bus Attendant, Principal, School Admin, Super Admin.
+**Roles:** Parent, Student, Class Teacher, Bus Attendant, Principal, School Admin, Super Admin.  
+**Family parity:** Parent and student share the same nav and core features (Zone + Fees). Full matrix: **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**.
 
 ### Admin vs Super Admin
 
@@ -55,283 +68,389 @@ Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI 
 |------------|--------------|-------------|
 | School user directory | Own school | All schools |
 | Change user roles | Yes (not Super Admin) | Yes (including Super Admin) |
-| Annual class promotion (pass → next grade) | Yes | Yes |
+| Annual class promotion | Yes | Yes |
 | Complete / start academic session | Yes | Yes |
 | Activate / pause schools | No | Yes |
-| Teacher class desk | No (uses Admin console) | No |
-
-### Student grade promotion
-
-At annual session end, Admin opens **Admin → Promote**, marks each student **Pass** or **Retain**, then **Apply promotion**. Pass moves `6-B` → `7-B` (section kept); Retain keeps the same class. History is stored on the student profile (`classHistory`).
 
 ---
 
 ## Tech stack
 
-- **Next.js 15** (App Router) → build output in `.next/`
-- **React 19** + **TypeScript**
-- **Plain CSS** (`app/globals.css`) — no Tailwind / Radix / UI kits
-- Inline SVG icons (`components/Icons.tsx`)
-- Config via env (`lib/config.ts`)
+- **Next.js 15** (App Router) + **React 19** + **TypeScript**
+- **MongoDB** via **Mongoose**
+- **JWT** sessions (`jose`) in httpOnly cookie `sc_session`
+- **Plain CSS** (`src/app/globals.css`)
+- Config: `src/lib/shared/config.ts`
 
 ---
 
 ## Project structure
 
+Application source is under **`src/`** (Next.js standard). Tests, docs, scripts, and deploy stay at repo root.
+
 ```text
-app/                 # Routes (/, /auth, /chats, /chats/[id], /notifications, /homework, ...)
-components/          # PhoneShell, Icons
-lib/                 # auth, config, school-data (chats / notifications / homework)
-public/              # Static assets
-.env.development     # Local defaults (auto-loaded by `next dev`)
-.env.staging         # Staging defaults (reference / copy)
-.env.production      # Production defaults (auto-loaded by `next build` / `next start`)
-.env.example         # Documented template
-Dockerfile           # Container image for Node deploy
-vercel.json          # Vercel project hints
+src/                      # Application source
+  app/                    # Pages + app/api/*  → URLs /… and /api/…
+  components/             # PhoneShell, EnrollmentDesk, Icons, StatusUI, WelcomeSketch
+  lib/
+    shared/               # roles, dates, config, api-client, engage-defaults, class-utils, money
+    providers/            # Auth, school-data, class, engage, leaves, enrollment, bus, admin
+    server/               # JWT, Zod, domain services, seed-school
+    db/mongodb.ts         # connectMongo (MONGO_URI | MONGODB_URI)
+    models/               # Mongoose schemas + *ToClient
+  middleware.ts           # OTP path rate limit
+public/                   # Static assets (robots.txt, …)
+tests/                    # Vitest unit tests
+scripts/seed.ts           # Demo school + users + sample data
+docs/                     # ARCHITECTURE, BACKEND, ROLES, DEPLOY, BACKLOG
+deploy/                   # Dockerfile + compose (build context = repo root)
+.env.example              # Env template
+tsconfig.json             # @/* → ./src/*
+vitest.config.mts
 ```
+
+Import paths (`@/*` → `src/*`):
+
+```ts
+import { useAuth } from "@/lib/providers/auth";
+import { apiFetch } from "@/lib/shared/api-client";
+```
+
+Deep dive: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** (layers, provider tree, services, route map).
 
 ---
 
 ## Requirements
 
 - **Node.js 20.19+ or 22.12+** (recommended: **22 LTS**)
-- npm (comes with Node)
+- npm
+- MongoDB Atlas (or local Mongo) when using the API backend
 
 ```bash
-node -v   # should be v22.x (or supported 20.x)
+nvm use 22   # if you use nvm
+node -v
 npm -v
-```
-
-If you use `nvm`:
-
-```bash
-nvm use 22
 ```
 
 ---
 
 ## Environments
 
-| Env | Purpose | Typical URL | App flag |
-|-----|---------|-------------|----------|
-| **development** | Local machine | `http://localhost:3000` | `APP_ENV=development` |
-| **staging** | Pre-prod / QA | `https://staging.example.com` | `APP_ENV=staging` |
-| **production** | Live users | `https://app.example.com` | `APP_ENV=production` |
+| Env | Purpose | Typical URL |
+|-----|---------|-------------|
+| **development** | Local | `http://localhost:3000` |
+| **staging** | QA | staging domain / port 3001 |
+| **production** | Live | production HTTPS URL |
 
 ### Environment variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `APP_ENV` | Server-side env label | `development` / `staging` / `production` |
-| `NEXT_PUBLIC_APP_ENV` | Client-visible env label | same as above |
-| `NEXT_PUBLIC_APP_NAME` | Display name | `SchoolConnect AI` |
-| `NEXT_PUBLIC_APP_URL` | Public base URL | `http://localhost:3000` |
-| `NEXT_PUBLIC_DEMO_MODE` | Show demo UX hints | `true` |
-| `NEXT_PUBLIC_DEMO_OTP` | Fixed demo OTP | `000000` |
+| Variable | Where | Description |
+|----------|--------|-------------|
+| `MONGO_URI` or `MONGODB_URI` | **Server only** | Mongo connection string. Either name works. |
+| `JWT_SECRET` | **Server only** | Signing key for session cookies |
+| `OTP_PROVIDER` | Server | `demo` (default) — fixed OTP; real SMS later |
+| `OTP_DEMO_CODE` | Server | Optional override for demo OTP (default `000000`) |
+| `NEXT_PUBLIC_DEMO_OTP` | Client | OTP shown/accepted in UI (default `000000`) |
+| `NEXT_PUBLIC_DEMO_MODE` | Client | Demo UX hints |
+| `NEXT_PUBLIC_APP_NAME` | Client | Display name |
+| `NEXT_PUBLIC_APP_URL` | Client | Public base URL |
+| `APP_ENV` / `NEXT_PUBLIC_APP_ENV` | Both | `development` / `staging` / `production` |
 
-> Only use `NEXT_PUBLIC_*` for non-secret values. Anything in `NEXT_PUBLIC_*` is shipped to the browser.
-
-Copy the template when needed:
+> Never put Mongo URI, JWT, or real OTP secrets in `NEXT_PUBLIC_*`.
 
 ```bash
 cp .env.example .env.local
+# or keep secrets in .env (gitignored if you add it — prefer .env.local)
 ```
-
-`.env*.local` is gitignored — use it for machine-specific overrides.
 
 ---
 
 ## Local development
 
+### Without Mongo (UI / localStorage fallback)
+
 ```bash
-git clone <repo-url>
-cd schoolconnect
 npm install
 npm run dev
 ```
 
-Open **http://localhost:3000**.
+Open http://localhost:3000 — auth/data stay in the browser.
 
-Next.js loads `.env.development` automatically in dev.
+### With Mongo (recommended — full API mode)
 
-Optional local overrides:
+1. Set in `.env` or `.env.local`:
 
 ```bash
-cp .env.development .env.local
-# edit .env.local
+MONGO_URI=mongodb+srv://USER:PASS@CLUSTER/DB?retryWrites=true&w=majority
+JWT_SECRET=long-random-secret
+OTP_PROVIDER=demo
+NEXT_PUBLIC_DEMO_OTP=000000
+```
+
+2. Allow your IP in **Atlas → Network Access** (or temporarily `0.0.0.0/0` for local demo).
+3. Seed + run:
+
+```bash
+npm install
+npm run seed
 npm run dev
 ```
 
-Run the UI against **staging-labelled** env on port 3001:
+4. Check health: http://localhost:3000/api/health → should include `"mongo": true`.
+
+If Mongo is down / IP blocked, `/api/health` reports degraded and the UI falls back to localStorage.
+
+---
+
+## MongoDB setup & seed
+
+### Atlas checklist
+
+1. Create a cluster and database user.
+2. **Network Access** → add your current IP (seed hangs or times out if IP is blocked).
+3. Copy the connection string into `MONGO_URI` or `MONGODB_URI`.
+4. Run:
 
 ```bash
-npm run dev:staging
-# http://localhost:3001
+npm run seed
 ```
+
+Successful seed looks like:
+
+```text
+Connecting to MongoDB…
+Connected.
+Created school Green Valley Public School
+Created class 6-B
+Super admin: super@schoolconnect.demo
+Admin: admin@greenvalley.demo
+Teacher: teacher@greenvalley.demo
+Parent: parent@demo.com
+Student: student@demo.com
+Invite code: TCH-DEMO-6B
+Seeded chats / homework / class desk demo data
+Done.
+```
+
+Seed is **idempotent** (safe to re-run). It also bootstraps demo chats, homework, notifications, and class desk for that school.
+
+### Common seed / connect errors
+
+| Symptom | Cause | Fix |
+|---------|--------|-----|
+| Hangs, then IP whitelist error | Atlas Network Access | Add current IP or `0.0.0.0/0` |
+| `MONGO_URI is not set` | Env not loaded | Put URI in `.env` / `.env.local` |
+| `mongo: false` on `/api/health` | Next can’t see env | Restart `npm run dev` after editing env |
+
+---
+
+## Demo accounts
+
+After `npm run seed`, sign in on `/auth` with these emails (or any new identity):
+
+| Identifier | Role | Notes |
+|------------|------|--------|
+| `super@schoolconnect.demo` | Super Admin | Multi-school tools |
+| `admin@greenvalley.demo` | School Admin | Invites, enrollments, `/admin` |
+| `teacher@greenvalley.demo` | Class Teacher | Class `6-B` desk |
+| `parent@demo.com` | Parent | Fees, bus, leaves |
+| `student@demo.com` | Student | Engage + class access (approved) |
+
+**OTP:** `000000` (or `NEXT_PUBLIC_DEMO_OTP` / `OTP_DEMO_CODE`).
+
+**Teacher invite (new teacher signup):** code `TCH-DEMO-6B`  
+(or create a fresh invite from Admin → Enroll).
+
+**School name in seed:** `Green Valley Public School`.
+
+Session cookie: `sc_session` (httpOnly). Profile is also mirrored locally for offline UX.
 
 ---
 
 ## Staging
 
-Use staging for QA before production.
-
-### 1) Build & run on a server (Node)
-
-```bash
-npm ci
-cp .env.staging .env.production.local   # bake staging public env into the build
-npm run build:staging
-npm run start:staging                   # port 3001
-```
-
-Or set the same keys in the host’s environment UI (preferred on Vercel / Railway / etc.) and run:
-
 ```bash
 npm ci
 npm run build:staging
-npm run start:staging
+npm run start:staging   # port 3001
 ```
 
-### 2) Staging on Vercel (Preview)
-
-1. Import the repo in [Vercel](https://vercel.com).
-2. Project → **Settings → Environment Variables** → scope **Preview**.
-3. Set:
+On Vercel Preview, set the same public vars plus **server** secrets:
 
 ```text
+MONGO_URI=...
+JWT_SECRET=...
+OTP_PROVIDER=demo
 APP_ENV=staging
 NEXT_PUBLIC_APP_ENV=staging
-NEXT_PUBLIC_APP_NAME=SchoolConnect AI (Staging)
-NEXT_PUBLIC_APP_URL=https://<your-preview-or-staging-domain>
-NEXT_PUBLIC_DEMO_MODE=true
 NEXT_PUBLIC_DEMO_OTP=000000
 ```
-
-4. Every PR / non-production branch deploy becomes a staging-like preview.
-
-Update `.env.staging` `NEXT_PUBLIC_APP_URL` to your real staging domain.
 
 ---
 
 ## Production
 
-### Build & run (Node process)
-
 ```bash
 npm ci
-npm run build:production   # creates .next/
-npm run start:production   # listens on :3000
+npm run build:production
+npm run start:production
 ```
-
-Or:
-
-```bash
-npm run build
-npm start
-```
-
-(`next build` / `next start` load `.env.production` by default.)
 
 ### Production checklist
 
-- [ ] Set `NEXT_PUBLIC_APP_URL` to the real HTTPS domain
-- [ ] Confirm Node 22+ on the host
-- [ ] `npm ci` (not a random local `node_modules` copy)
-- [ ] Health-check `/` and `/auth` after deploy
-- [ ] Do **not** force-push / rewrite published git history (see Important instructions)
+- [ ] Real `MONGO_URI` + strong `JWT_SECRET`
+- [ ] Atlas Network Access locked to known IPs / VPC (not open `0.0.0.0/0` long-term)
+- [ ] `NEXT_PUBLIC_APP_URL` = real HTTPS domain
+- [ ] `OTP_PROVIDER=demo` only for demos — replace before real users
+- [ ] Smoke: `/api/health`, `/auth`, `/admin`, `/chats`, `/bus`
+- [ ] Do **not** force-push / rewrite published git history (Lovable sync)
 
 ---
 
 ## Deployment
 
-### A) Vercel (recommended for Next.js)
+### Vercel
+
+Set **Preview** and **Production** env vars separately (`MONGO_URI`, `JWT_SECRET`, public `NEXT_PUBLIC_*`).
 
 ```bash
-npm i -g vercel
-vercel            # preview / staging-style
-vercel --prod     # production
+vercel
+vercel --prod
 ```
 
-Or connect the GitHub/GitLab repo in the Vercel dashboard:
+### Docker — local
 
-| Vercel env | Maps to |
-|------------|---------|
-| Preview | Staging |
-| Production | Production |
-
-Set env vars under **Project → Settings → Environment Variables** for Preview and Production separately.
-
-`vercel.json` is included for framework defaults.
-
-### B) Docker
-
-```bash
-# Build (production defaults)
-docker build -t schoolconnect:prod .
-
-# Or pass staging build-args
-docker build \
-  --build-arg APP_ENV=staging \
-  --build-arg NEXT_PUBLIC_APP_ENV=staging \
-  --build-arg NEXT_PUBLIC_APP_NAME="SchoolConnect AI (Staging)" \
-  --build-arg NEXT_PUBLIC_APP_URL=https://staging.example.com \
-  -t schoolconnect:staging .
-
-docker run --rm -p 3000:3000 schoolconnect:prod
-```
-
-Helper scripts:
+Image: `deploy/Dockerfile` (build context = repo root).
 
 ```bash
 npm run docker:build
-npm run docker:run
+npm run docker:run   # uses --env-file .env
 ```
 
-### C) Any Node host (VM / PM2 / Railway / Render)
+### Docker — कस्टम सर्वर (VPS)
+
+सर्वर पर Docker + Compose चाहिए। Mongo Atlas में **server IP allowlist** करें। विस्तार: **[docs/DEPLOY.md](docs/DEPLOY.md)**.
+
+**1. Code लाएँ**
+
+```bash
+git clone <your-repo-url> schoolconnect
+cd schoolconnect
+```
+
+**2. Env सेट करें** (रूट `.env`)
+
+```bash
+cp .env.example .env
+nano .env
+```
+
+| Key | क्या भरें |
+|-----|-----------|
+| `MONGO_URI` / `MONGODB_URI` | Atlas connection string |
+| `JWT_SECRET` | लंबा random secret |
+| `NEXT_PUBLIC_APP_URL` | `https://your.domain` (build-time; बदलो तो rebuild) |
+| `OTP_PROVIDER` | असली यूज़र्स के लिए `demo` मत रखो |
+
+**3. Build & run**
+
+```bash
+docker compose -f deploy/compose.yml up -d --build
+# या: npm run docker:up
+
+curl -s http://127.0.0.1:3000/api/health
+# expect: "mongo": true
+```
+
+**4. Seed एक बार** (Mongo पहुँच वाली मशीन से)
+
+```bash
+npm ci
+npm run seed
+```
+
+**5. HTTPS (डोमेन)** — Nginx/Caddy → `127.0.0.1:3000`
+
+```nginx
+location / {
+  proxy_pass http://127.0.0.1:3000;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+**अपडेट**
+
+```bash
+git pull
+docker compose -f deploy/compose.yml up -d --build
+```
+
+`MONGO_URI` / `JWT_SECRET` runtime पर दें (`--env-file` / Compose)। `NEXT_PUBLIC_*` image build में bake होते हैं।
+
+`public/robots.txt` सिर्फ crawler hint है — सर्वर सुरक्षा नहीं।
+
+### Node host / PM2
 
 ```bash
 npm ci
 npm run build:production
-# process manager example:
-# pm2 start npm --name schoolconnect -- run start:production
 npm run start:production
 ```
-
-Expose port **3000** (or set `PORT`).
-
----
-
-## Demo login
-
-1. Open `/auth`
-2. Enter any phone or email
-3. Click **Send OTP**
-4. Enter OTP **`000000`** (or whatever `NEXT_PUBLIC_DEMO_OTP` is)
-5. Complete profile on first login
-
-Session is stored in the browser (`localStorage` keys `sc_auth_user_v1`, `sc_users_v1`, `sc_admin_data_v1`).
-
-**Role persistence:** On first profile setup, the selected role is written to `sc_users_v1` under that phone/email. Re-login with the same identifier restores that role — you are not asked to pick again.
-
-**Try Admin:** Sign up as **School Admin** or **Super Admin** → open **Admin** in the bottom nav (`/admin`) → Users / Promote / Session (/ Schools for Super Admin).
 
 ---
 
 ## Important instructions
 
-1. **Node version** — Use Node **22** (or 20.19+). Older Node fails Vite/Next tooling.
-2. **Build output** — `npm run build` must succeed and produce a **`.next/`** folder before `npm start` or Docker run.
-3. **No real secrets in `NEXT_PUBLIC_*`** — those values are public in the client bundle.
-4. **Demo only** — OTP, fees “Pay now”, AI send, and bus map are UI simulations. Do not treat as production school data.
-5. **Git / Lovable** — This repo history may sync with Lovable. **Do not force-push, rebase, or rewrite commits already on the remote** or project history can break. Keep `main` deployable.
-6. **Env files** — Commit `.env.development`, `.env.staging`, `.env.production`, `.env.example`. Never commit `.env.local` or real production secrets.
-7. **Install** — Prefer `npm ci` in CI/CD and servers for reproducible installs.
-8. **Auth redirect** — Protected routes send users to `/auth`. Optional: `/auth?redirect=/fees`.
-9. **Routes to smoke-test after deploy** — `/`, `/auth`, `/admin`, `/engage`, `/class`, `/chats`, `/chats/class-6b`, `/notifications`, `/homework`, `/attendance`, `/fees`, `/circulars`, `/bus`, `/ai`.
-10. **Teacher posting** — Sign up as **Class Teacher** or **Principal**. Use `/class` for roster + daily activity, `/attendance` to mark P/A/L/H, `/homework` to post tasks, `/circulars` to announce, and chats for progress notes / parent DMs.
-11. **Admin / promotion** — Sign up as **School Admin** or **Super Admin**. Use `/admin` for users, annual promotion (Pass → next class), and sessions. Super Admin also manages schools.
-12. **Student engagement** — Register as **Student** to get Student Zone in the bottom nav (XP, streaks, missions, focus timer). Parents/teachers can still open `/engage` from the sparkles icon.
+1. **Node 22** (or 20.19+) recommended.
+2. **Mongo first for API mode** — seed before expecting shared data across browsers/devices.
+3. **No secrets in `NEXT_PUBLIC_*`.**
+4. Fees “Pay now” and AI replies are still **demo simulations**; fee ledger + bus route geometry load from Mongo via `/api/fees` and `/api/bus` when the backend is up.
+5. **Git / Lovable** — do not force-push or rewrite remote history.
+6. Prefer `npm ci` on servers.
+7. Protected routes redirect to `/auth` (optional `?redirect=/fees`).
+8. Smoke routes: `/`, `/auth`, `/admin`, `/engage`, `/class`, `/chats`, `/homework`, `/attendance`, `/fees`, `/circulars`, `/bus`, `/ai`, `/api/health`.
+9. Teachers need an **invite code** from School Admin; students may stay on `/pending` until enrollment is approved.
+10. Full API list and models: **[docs/BACKEND.md](docs/BACKEND.md)**. System layers: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**. Roles & features: **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**.
+
+---
+
+## Architecture docs
+
+| Doc | Contents |
+|-----|----------|
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | **Source layout**, layers, provider tree, services, UI route map, request path |
+| [docs/BACKEND.md](docs/BACKEND.md) | Auth model, seed data, full API map, Mongo collections |
+| [docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md) | Per-role access, admin deep-dive, route/API matrices |
+| [docs/NEXT-TASKS.md](docs/NEXT-TASKS.md) | Ordered next sprint (what to build now) |
+| [docs/BACKLOG.md](docs/BACKLOG.md) | Shipped history + open P0/P1/P2 / advanced roadmap |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Custom VPS Docker, Compose, Nginx HTTPS, robots vs security |
+
+---
+
+## Roles & features
+
+Detailed current-implementation summary (every role, admin console, shared features, UI↔API notes):
+
+**[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**
+
+---
+
+## Next tasks & backlog
+
+**What to do next (short list):** **[docs/NEXT-TASKS.md](docs/NEXT-TASKS.md)**
+
+1. Zod / `withApiHandler` rollup on remaining APIs  
+2. Parent↔student link UI + resolve child via links  
+3. Principal ↔ `/admin` alignment  
+4. Firebase SMS OTP (keep demo for local)  
+5. Then: Razorpay, chat SSE, bus GPS, CSS split  
+
+**Full backlog (shipped history + open advanced):** **[docs/BACKLOG.md](docs/BACKLOG.md)**
+
+Historical P0/P1 (JWT, OTP hash, fees Pay, home feed, etc.) are **done** — do not restart those unless regressing.
 
 ---
 
@@ -339,19 +458,19 @@ Session is stored in the browser (`localStorage` keys `sc_auth_user_v1`, `sc_use
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Local development (port 3000) |
-| `npm run dev:staging` | Local with staging labels (port 3001) |
+| `npm run dev` | Local Next.js (port 3000) |
+| `npm run seed` | Seed Mongo demo school, users, chats, class desk |
 | `npm run build` | Production build → `.next/` |
-| `npm run build:staging` | Staging-labelled build |
-| `npm run build:production` | Production-labelled build |
-| `npm run start` | Serve last build (port 3000) |
-| `npm run start:staging` | Serve on port 3001 |
-| `npm run start:production` | Serve production on port 3000 |
-| `npm run docker:build` | Build Docker image |
-| `npm run docker:run` | Run container on port 3000 |
+| `npm run start` | Serve last build |
+| `npm run build:staging` / `start:staging` | Staging-labelled (port 3001) |
+| `npm run build:production` / `start:production` | Production-labelled |
+| `npm run docker:build` / `docker:run` | Local image build / run with `.env` |
+| `npm run docker:up` / `docker:down` | VPS Compose up/down (`deploy/compose.yml`) |
+| `npm run lint` | ESLint (Next core-web-vitals) |
+| `npm test` | Vitest unit tests |
 
 ---
 
 ## License / status
 
-Private demo project (`"private": true` in `package.json`). Not licensed for public redistribution unless you add a license file.
+Private demo project (`"private": true` in `package.json`).

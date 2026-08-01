@@ -1,0 +1,36 @@
+# SchoolConnect on a custom VPS / Docker host
+#
+# From repo root:
+#   cp .env.example .env.production.local   # fill MONGO_URI, JWT_SECRET, NEXT_PUBLIC_APP_URL
+#   docker compose -f deploy/compose.yml up -d --build
+#
+# App: http://SERVER_IP:3000  (put Nginx/Caddy TLS in front for HTTPS)
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      args:
+        APP_ENV: production
+        NEXT_PUBLIC_APP_ENV: production
+        NEXT_PUBLIC_APP_NAME: SchoolConnect AI
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_DEMO_MODE: ${NEXT_PUBLIC_DEMO_MODE:-false}
+        NEXT_PUBLIC_DEMO_OTP: ${NEXT_PUBLIC_DEMO_OTP:-000000}
+    image: schoolconnect:prod
+    container_name: schoolconnect
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    env_file:
+      - ../.env
+    environment:
+      APP_ENV: production
+      NEXT_PUBLIC_APP_ENV: production
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: 0.0.0.0
+      # Prefer secrets from env_file / host — override here only if needed:
+      # MONGO_URI: mongodb+srv://...
+      # JWT_SECRET: ...
+    restart: unless-stopped
