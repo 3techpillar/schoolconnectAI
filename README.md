@@ -1,20 +1,15 @@
 # SchoolConnect AI
 
-WhatsApp-first school communication app for parents, teachers, staff, and admins.
-Track attendance, homework, fees, circulars, live bus ETA, and ask an in-app AI assistant — all in a mobile-first UI.
+WhatsApp-first school communication for **web** and **React Native**, sharing one Next.js `/api` backend and `@schoolconnect/shared`.
 
-> **Backend:** Next.js `src/app/api` + **MongoDB (Mongoose)** + JWT cookie sessions.  
-> When `MONGO_URI` / `MONGODB_URI` is set and reachable, the app is **API-dependent**.  
-> Without Mongo, providers fall back to browser `localStorage` (offline / UI-only demo).
+> **Monorepo:** `apps/web` · `apps/mobile` · `packages/shared`  
+> **Auth:** JWT — web cookie `sc_session`; mobile `Authorization: Bearer`  
+> **Product:** per-school **Connect** or **Full ERP** → [docs/PRODUCT-MODES.md](docs/PRODUCT-MODES.md)
 
-More detail:
-
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — source layout, layers, providers, services, route map
-- **[docs/BACKEND.md](docs/BACKEND.md)** — API map + models
-- **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)** — per-role access, admin, feature matrix
-- **[docs/NEXT-TASKS.md](docs/NEXT-TASKS.md)** — ordered next sprint (current priorities)
-- **[docs/DEPLOY.md](docs/DEPLOY.md)** — custom VPS / Docker
-- **[docs/BACKLOG.md](docs/BACKLOG.md)** — full backlog history + open advanced items
+**Documentation hub:** **[docs/README.md](docs/README.md)**  
+**Business requirements (full):** **[docs/BRD.md](docs/BRD.md)** — features, flows, diagrams, use cases, FAQs  
+**System architecture:** **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — monorepo, providers, `/api` layers, `/api/v1`  
+**Product modes:** [docs/PRODUCT-MODES.md](docs/PRODUCT-MODES.md) · **CSV import/export:** [docs/DATA-IMPORT-EXPORT.md](docs/DATA-IMPORT-EXPORT.md)
 
 ---
 
@@ -22,7 +17,7 @@ More detail:
 
 1. [Features](#features)
 2. [Tech stack](#tech-stack)
-3. [Project structure](#project-structure)
+3. [Project structure](#project-structure) *(→ [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md))*
 4. [Requirements](#requirements)
 5. [Environments](#environments)
 6. [Local development](#local-development)
@@ -33,34 +28,48 @@ More detail:
 11. [Deployment](#deployment)
 12. [Important instructions](#important-instructions)
 13. [Scripts reference](#scripts-reference)
-14. [Architecture docs](#architecture-docs)
-15. [Roles & features](#roles--features)
-16. [Next tasks & backlog](#next-tasks--backlog)
+14. [Documentation](#documentation)
 
 ---
 
 ## Features
 
+### Product modes
+
+| Mode | Who | What |
+|------|-----|------|
+| **Connect** | Collab-only | Chats, HW, bus, leave, light `/admin`, `/transfers` |
+| **Full ERP** | MDM schools | Connect **plus** `/erp` |
+
+| Campus | Connect | ERP |
+|--------|---------|-----|
+| **Single** | Harmony | Radoms International |
+| **Group** | Sunrise East/West | Radmos Noida/Lucknow |
+
+Free plan **~1 year** per school (`subscriptionExpiresAt`). Details: **[docs/PRODUCT-MODES.md](docs/PRODUCT-MODES.md)** · **[docs/BRD.md](docs/BRD.md)**.
+
+### App surfaces
+
 | Area | What it does |
 |------|----------------|
-| **Auth** | Phone or email → OTP → profile. Role persisted. Teachers need admin invite code |
-| **Enrollment** | Admin invites teachers; admin/class teacher add students; students wait on `/pending` |
+| **Auth** | Phone or email → OTP → profile. Teachers need admin invite code |
+| **Enrollment** | Invites + student approval on `/pending` |
 | **Home** | Role-aware dashboards (family / teacher / admin) |
-| **School Admin** | Users & roles, annual grade promotion, sessions (`/admin`) |
-| **Super Admin** | Multi-school activate/pause + all admin tools |
+| **School Admin** | Users, promotions, sessions (`/admin`) |
+| **School ERP** | Desktop MDM when `productMode === "erp"` — shared DB/API with web & mobile |
+| **CSV import/export** | Students & teachers/staff bulk load (`/erp/students`, `/erp/staff`) — [guidelines](docs/DATA-IMPORT-EXPORT.md) |
+| **Campus transfers** | Group or open-intake moves (`/transfers`, `/erp/transfers`) |
+| **Super Admin** | Multi-school + product mode + subscription end date + all admin tools |
 | **Teacher Class Desk** | Roster, attendance P/A/L/H, daily activity, parent DMs |
-| **Learning Zone** | XP, streaks, mood, missions, focus timer, badges (`/engage`) — parent & student |
-| **Chats** | WhatsApp-style threads; teachers post activity / homework / progress |
-| **Notifications** | Homework, activity, progress, fees, circulars, bus |
-| **Homework** | Deadlines, status updates, overdue highlight |
-| **Attendance / Leaves** | Calendar; approved leaves as **L**; teachers approve leaves |
-| **Fees** | Outstanding + Pay UI (demo) |
-| **Circulars** | School notices (staff publish) |
-| **Bus tracking** | Live ETA, stops between pickup, alerts at **10 min** and **5 min** |
-| **AI assistant** | In-app school Q&A |
+| **Learning Zone** | XP, streaks, missions (`/engage`) — parent & student |
+| **Chats / Homework / Circulars / Notifications** | WhatsApp-style school communication |
+| **Attendance / Leaves** | Calendar; approved leaves as **L** |
+| **Fees** | Family pay UI when fees module on (ERP schools by default) |
+| **Bus tracking** | Live ETA + 10 / 5 min alerts |
+| **AI assistant** | In-app school Q&A (rule stub) |
 
-**Roles:** Parent, Student, Class Teacher, Bus Attendant, Principal, School Admin, Super Admin.  
-**Family parity:** Parent and student share the same nav and core features (Zone + Fees). Full matrix: **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**.
+**Roles:** Parent, Student, Class Teacher, Bus Attendant, Principal, School Admin, Super Admin, Accountant.  
+**Family:** Parent ≈ student nav; Fees tab only if school capabilities allow. Matrix: **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**.
 
 ### Admin vs Super Admin
 
@@ -71,52 +80,48 @@ More detail:
 | Annual class promotion | Yes | Yes |
 | Complete / start academic session | Yes | Yes |
 | Activate / pause schools | No | Yes |
+| Set school `productMode` | No | Yes |
+| Open `/erp` | If school is ERP mode | Always (onboarding) |
 
 ---
 
 ## Tech stack
 
-- **Next.js 15** (App Router) + **React 19** + **TypeScript**
+- **Monorepo** (npm workspaces): `apps/web`, `apps/mobile`, `packages/shared`
+- **Next.js 15** (App Router) + **React 19** + **TypeScript** (web + API)
+- **React Native 0.76 CLI** (Family MVP mobile)
 - **MongoDB** via **Mongoose**
-- **JWT** sessions (`jose`) in httpOnly cookie `sc_session`
-- **Plain CSS** (`src/app/globals.css`)
-- Config: `src/lib/shared/config.ts`
+- **JWT** (`jose`) — cookie `sc_session` (web) + Bearer (mobile)
+- **Plain CSS** (`apps/web/src/app/globals.css`)
+- Shared domain: `@schoolconnect/shared`
 
 ---
 
 ## Project structure
 
-Application source is under **`src/`** (Next.js standard). Tests, docs, scripts, and deploy stay at repo root.
-
 ```text
-src/                      # Application source
-  app/                    # Pages + app/api/*  → URLs /… and /api/…
-  components/             # PhoneShell, EnrollmentDesk, Icons, StatusUI, WelcomeSketch
-  lib/
-    shared/               # roles, dates, config, api-client, engage-defaults, class-utils, money
-    providers/            # Auth, school-data, class, engage, leaves, enrollment, bus, admin
-    server/               # JWT, Zod, domain services, seed-school
-    db/mongodb.ts         # connectMongo (MONGO_URI | MONGODB_URI)
-    models/               # Mongoose schemas + *ToClient
-  middleware.ts           # OTP path rate limit
-public/                   # Static assets (robots.txt, …)
-tests/                    # Vitest unit tests
-scripts/seed.ts           # Demo school + users + sample data
-docs/                     # ARCHITECTURE, BACKEND, ROLES, DEPLOY, BACKLOG
-deploy/                   # Dockerfile + compose (build context = repo root)
-.env.example              # Env template
-tsconfig.json             # @/* → ./src/*
-vitest.config.mts
+apps/
+  web/                    # Next.js UI + /api/* backend
+    src/app/              # Pages + API routes (+ /erp, /api/v1)
+    src/components/       # shell/ · admin/ · erp/
+    src/lib/
+      models/             # core · comms · ops · family · erp
+      server/             # http/auth + services/
+      providers/ shared/ db/
+    src/modules/          # Domain modules for /api/v1
+    src/shared/           # v1 RBAC + tenant
+    src/STRUCTURE.md      # Folder roles cheat-sheet
+    config/api-proxy.ts   # Local-dev API rewrite only
+  mobile/                 # React Native CLI Family MVP
+packages/
+  shared/                 # @schoolconnect/shared — roles, product modes, DTOs, Zod
+docs/                     # See docs/README.md
+deploy/                   # Dockerfile + compose (context = repo root)
 ```
 
-Import paths (`@/*` → `src/*`):
+Web imports (`@/*` → `apps/web/src/*`). Prefer domain types from `@schoolconnect/shared`.
 
-```ts
-import { useAuth } from "@/lib/providers/auth";
-import { apiFetch } from "@/lib/shared/api-client";
-```
-
-Deep dive: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** (layers, provider tree, services, route map).
+Deep dive: **[docs/README.md](docs/README.md)** · Architecture: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** · Structure: **[apps/web/src/STRUCTURE.md](apps/web/src/STRUCTURE.md)** · Mobile: **[docs/MOBILE.md](docs/MOBILE.md)**.
 
 ---
 
@@ -192,9 +197,13 @@ NEXT_PUBLIC_DEMO_OTP=000000
 
 ```bash
 npm install
+# env for web/API (preferred path after monorepo move)
+cp .env.example apps/web/.env.local   # or keep root .env and copy into apps/web/
 npm run seed
-npm run dev
+npm run dev:web
 ```
+
+Mobile (separate terminal): see **[docs/MOBILE.md](docs/MOBILE.md)**.
 
 4. Check health: http://localhost:3000/api/health → should include `"mongo": true`.
 
@@ -215,24 +224,15 @@ If Mongo is down / IP blocked, `/api/health` reports degraded and the UI falls b
 npm run seed
 ```
 
-Successful seed looks like:
+Successful seed prints all demo emails for the **full matrix**:
 
-```text
-Connecting to MongoDB…
-Connected.
-Created school Green Valley Public School
-Created class 6-B
-Super admin: super@schoolconnect.demo
-Admin: admin@greenvalley.demo
-Teacher: teacher@greenvalley.demo
-Parent: parent@demo.com
-Student: student@demo.com
-Invite code: TCH-DEMO-6B
-Seeded chats / homework / class desk demo data
-Done.
-```
+- Single + ERP / Group + ERP / Single + Connect / Group + Connect  
+- Pending transfers (group + cross-group)  
+- Free ~1 year subscription per school  
 
-Seed is **idempotent** (safe to re-run). It also bootstraps demo chats, homework, notifications, and class desk for that school.
+See [Demo accounts](#demo-accounts) for credential tables.
+
+Seed is **idempotent** (safe to re-run). It also bootstraps demo chats, homework, notifications, and class desk per school.
 
 ### Common seed / connect errors
 
@@ -246,24 +246,118 @@ Seed is **idempotent** (safe to re-run). It also bootstraps demo chats, homework
 
 ## Demo accounts
 
-After `npm run seed`, sign in on `/auth` with these emails (or any new identity):
+After `npm run seed`, sign in on `/auth`. **OTP:** `000000`.
 
-| Identifier | Role | Notes |
-|------------|------|--------|
-| `super@schoolconnect.demo` | Super Admin | Multi-school tools |
-| `admin@greenvalley.demo` | School Admin | Invites, enrollments, `/admin` |
-| `teacher@greenvalley.demo` | Class Teacher | Class `6-B` desk |
-| `parent@demo.com` | Parent | Fees, bus, leaves |
-| `student@demo.com` | Student | Engage + class access (approved) |
+Every school gets a **free subscription for ~1 year** (`subscriptionExpiresAt`). Super Admin can extend/change the end date on `/erp/schools`.
 
-**OTP:** `000000` (or `NEXT_PUBLIC_DEMO_OTP` / `OTP_DEMO_CODE`).
+### Product matrix (all seeded)
 
-**Teacher invite (new teacher signup):** code `TCH-DEMO-6B`  
-(or create a fresh invite from Admin → Enroll).
+| | **Connect** (no MDM) | **Full ERP** |
+|--|----------------------|--------------|
+| **Single campus** | Harmony Connect | Radoms International *(open cross-group intake)* |
+| **Group (multi-campus)** | Sunrise East + West (`SUNRISE`) | Radmos Noida + Lucknow (`RADMOS`) |
 
-**School name in seed:** `Green Valley Public School`.
+**Branch overrides:** Lucknow ERP has `fees: false`; Sunrise West has `bus: false`.
 
-Session cookie: `sc_session` (httpOnly). Profile is also mirrored locally for offline UX.
+**Transfers:** group = same `groupCode`; cross-group when destination `transferPolicy: open`. UI: `/transfers` (Connect) or `/erp/transfers` (ERP).
+
+### Platform
+
+| Identifier | Role |
+|------------|------|
+| `super@schoolconnect.demo` | Super Admin |
+
+---
+
+### A) Group + ERP — Radmos (`RADMOS`)
+
+**Noida** (fees on)
+
+| Identifier | Role |
+|------------|------|
+| `admin.noida@radmos.demo` | School Admin |
+| `principal.noida@radmos.demo` | Principal |
+| `teacher.noida@radmos.demo` | Class Teacher |
+| `accounts.noida@radmos.demo` | Accountant |
+| `bus.noida@radmos.demo` | Bus Attendant |
+| `parent.noida@radmos.demo` | Parent |
+| `student.noida@radmos.demo` | Student |
+| `transfer.noida@radmos.demo` | Student → **pending → Lucknow** |
+
+**Lucknow** (fees module **off**)
+
+| Identifier | Role |
+|------------|------|
+| `admin.lucknow@radmos.demo` | School Admin *(approve Noida transfer)* |
+| `principal.lucknow@radmos.demo` | Principal |
+| `teacher.lucknow@radmos.demo` | Class Teacher |
+| `accounts.lucknow@radmos.demo` | Accountant |
+| `bus.lucknow@radmos.demo` | Bus Attendant |
+| `parent.lucknow@radmos.demo` | Parent |
+| `student.lucknow@radmos.demo` | Student |
+
+---
+
+### B) Single + ERP — Radoms International (`open` intake)
+
+| Identifier | Role |
+|------------|------|
+| `admin@radoms.demo` | School Admin *(approve cross-group)* |
+| `principal@radoms.demo` | Principal |
+| `teacher@radoms.demo` | Class Teacher |
+| `accounts@radoms.demo` | Accountant |
+| `bus@radoms.demo` | Bus Attendant |
+| `parent@radoms.demo` | Parent |
+| `student@radoms.demo` | Student |
+
+---
+
+### C) Single + Connect — Harmony
+
+| Identifier | Role |
+|------------|------|
+| `admin@connect.demo` | School Admin → `/transfers` |
+| `principal@connect.demo` | Principal |
+| `teacher@connect.demo` | Class Teacher |
+| `bus@connect.demo` | Bus Attendant |
+| `parent@connect.demo` | Parent |
+| `student@connect.demo` | Student |
+| `cross.harmony@connect.demo` | Student → **pending cross-group → RIS** |
+
+---
+
+### D) Group + Connect — Sunrise (`SUNRISE`)
+
+**East**
+
+| Identifier | Role |
+|------------|------|
+| `admin.east@sunrise.demo` | School Admin |
+| `teacher.east@sunrise.demo` | Class Teacher |
+| `parent.east@sunrise.demo` | Parent |
+| `student.east@sunrise.demo` | Student |
+| `transfer.east@sunrise.demo` | Student → **pending → West** |
+
+Also: `principal.east@sunrise.demo`, `bus.east@sunrise.demo`
+
+**West** (bus module **off**)
+
+| Identifier | Role |
+|------------|------|
+| `admin.west@sunrise.demo` | School Admin *(approve East transfer)* |
+| `teacher.west@sunrise.demo` | Class Teacher |
+| `parent.west@sunrise.demo` | Parent |
+| `student.west@sunrise.demo` | Student |
+
+Also: `principal.west@sunrise.demo`, `bus.west@sunrise.demo`
+
+---
+
+### Legacy Green Valley (ERP)
+
+`admin@greenvalley.demo` · `teacher@greenvalley.demo` · `accounts@greenvalley.demo` · `parent@demo.com` · `student@demo.com`
+
+Session cookie: `sc_session` (httpOnly).
 
 ---
 
@@ -411,46 +505,28 @@ npm run start:production
 5. **Git / Lovable** — do not force-push or rewrite remote history.
 6. Prefer `npm ci` on servers.
 7. Protected routes redirect to `/auth` (optional `?redirect=/fees`).
-8. Smoke routes: `/`, `/auth`, `/admin`, `/engage`, `/class`, `/chats`, `/homework`, `/attendance`, `/fees`, `/circulars`, `/bus`, `/ai`, `/api/health`.
+8. Smoke routes: `/`, `/auth`, `/admin`, `/erp`, `/engage`, `/class`, `/chats`, `/homework`, `/attendance`, `/fees`, `/circulars`, `/bus`, `/ai`, `/api/health`.
 9. Teachers need an **invite code** from School Admin; students may stay on `/pending` until enrollment is approved.
-10. Full API list and models: **[docs/BACKEND.md](docs/BACKEND.md)**. System layers: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**. Roles & features: **[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**.
+10. Full docs index: **[docs/README.md](docs/README.md)**. Business requirements: **[docs/BRD.md](docs/BRD.md)**. API map: **[docs/BACKEND.md](docs/BACKEND.md)**.
 
 ---
 
-## Architecture docs
+## Documentation
+
+Everything under **`docs/`** is indexed here: **[docs/README.md](docs/README.md)**.
 
 | Doc | Contents |
 |-----|----------|
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | **Source layout**, layers, provider tree, services, UI route map, request path |
-| [docs/BACKEND.md](docs/BACKEND.md) | Auth model, seed data, full API map, Mongo collections |
-| [docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md) | Per-role access, admin deep-dive, route/API matrices |
-| [docs/NEXT-TASKS.md](docs/NEXT-TASKS.md) | Ordered next sprint (what to build now) |
-| [docs/BACKLOG.md](docs/BACKLOG.md) | Shipped history + open P0/P1/P2 / advanced roadmap |
-| [docs/DEPLOY.md](docs/DEPLOY.md) | Custom VPS Docker, Compose, Nginx HTTPS, robots vs security |
-
----
-
-## Roles & features
-
-Detailed current-implementation summary (every role, admin console, shared features, UI↔API notes):
-
-**[docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md)**
-
----
-
-## Next tasks & backlog
-
-**What to do next (short list):** **[docs/NEXT-TASKS.md](docs/NEXT-TASKS.md)**
-
-1. Zod / `withApiHandler` rollup on remaining APIs  
-2. Parent↔student link UI + resolve child via links  
-3. Principal ↔ `/admin` alignment  
-4. Firebase SMS OTP (keep demo for local)  
-5. Then: Razorpay, chat SSE, bus GPS, CSS split  
-
-**Full backlog (shipped history + open advanced):** **[docs/BACKLOG.md](docs/BACKLOG.md)**
-
-Historical P0/P1 (JWT, OTP hash, fees Pay, home feed, etc.) are **done** — do not restart those unless regressing.
+| [docs/BRD.md](docs/BRD.md) | **Full BRD** — features, flowcharts, use cases, FAQs (**v1.2**) |
+| [docs/PRODUCT-MODES.md](docs/PRODUCT-MODES.md) | Campus × mode matrix, transfers, free subscription |
+| [docs/ROLES-AND-FEATURES.md](docs/ROLES-AND-FEATURES.md) | Per-role UI / API |
+| [docs/ERP.md](docs/ERP.md) | Desktop `/erp` MDM + school flags |
+| [docs/DATA-IMPORT-EXPORT.md](docs/DATA-IMPORT-EXPORT.md) | Student & teacher CSV import/export guidelines |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | **System architecture** — monorepo, providers, modular `/api/v1` |
+| [docs/BACKEND.md](docs/BACKEND.md) | Auth, routes, Mongo models |
+| [docs/MOBILE.md](docs/MOBILE.md) | React Native Family MVP |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | VPS Docker / Compose |
+| [docs/BACKLOG.md](docs/BACKLOG.md) | Open priorities |
 
 ---
 
@@ -458,16 +534,19 @@ Historical P0/P1 (JWT, OTP hash, fees Pay, home feed, etc.) are **done** — do 
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Local Next.js (port 3000) |
+| `npm run dev` / `dev:web` | Local Next.js web+API (port 3000) |
+| `npm run dev:mobile` | Metro bundler for RN |
+| `npm run ios` / `android` | Run RN app |
+| `npm run typecheck` | Shared + web TypeScript |
 | `npm run seed` | Seed Mongo demo school, users, chats, class desk |
-| `npm run build` | Production build → `.next/` |
-| `npm run start` | Serve last build |
+| `npm run build` / `build:web` | Production web build |
+| `npm run start` | Serve last web build |
 | `npm run build:staging` / `start:staging` | Staging-labelled (port 3001) |
 | `npm run build:production` / `start:production` | Production-labelled |
 | `npm run docker:build` / `docker:run` | Local image build / run with `.env` |
 | `npm run docker:up` / `docker:down` | VPS Compose up/down (`deploy/compose.yml`) |
-| `npm run lint` | ESLint (Next core-web-vitals) |
-| `npm test` | Vitest unit tests |
+| `npm run lint` | ESLint (web) |
+| `npm test` | Vitest unit tests (web) |
 
 ---
 

@@ -3,6 +3,8 @@
 SchoolConnect Docker image: [`deploy/Dockerfile`](../deploy/Dockerfile)  
 Compose: [`deploy/compose.yml`](../deploy/compose.yml)
 
+**Docs hub:** [README.md](./README.md) · Root setup: [../README.md](../README.md)
+
 ## Prerequisites on the server
 
 - Docker Engine + Docker Compose plugin
@@ -76,6 +78,8 @@ location / {
   proxy_set_header Host $host;
   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header Authorization $http_authorization;
+  proxy_pass_header Authorization;
 }
 ```
 

@@ -4,6 +4,14 @@ node_modules
 # next.js
 .next/
 out/
+apps/web/.next/
+
+# react native
+apps/mobile/android/app/build/
+apps/mobile/ios/build/
+apps/mobile/ios/Pods/
+*.jks
+*.mobileprovision
 
 # build / cache
 dist

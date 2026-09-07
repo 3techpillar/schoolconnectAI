@@ -1,10 +1,10 @@
 # SchoolConnect — Backend
 
-Next.js App Router API (`src/app/api`) + MongoDB (Mongoose) + JWT cookie auth.
+Next.js App Router API (`apps/web/src/app/api`) + MongoDB (Mongoose) + JWT (cookie or Bearer).
 
-When `MONGO_URI` or `MONGODB_URI` is configured and `/api/health` returns `"mongo": true`, client providers call these APIs. Otherwise they use `localStorage` fallbacks.
+When `MONGO_URI` or `MONGODB_URI` is configured and `/api/health` returns `"mongo": true`, clients call these APIs.
 
-System layers / folder map: **[ARCHITECTURE.md](ARCHITECTURE.md)**
+**Docs hub:** [README.md](./README.md) · **Modes:** [PRODUCT-MODES.md](PRODUCT-MODES.md) · **Architecture:** [ARCHITECTURE.md](ARCHITECTURE.md) (includes modular `/api/v1`) · **ERP:** [ERP.md](ERP.md) · **CSV:** [DATA-IMPORT-EXPORT.md](DATA-IMPORT-EXPORT.md) · **Transfers / subscription:** see PRODUCT-MODES + seed in root README
 
 ---
 
@@ -22,22 +22,11 @@ Source lives under **`src/`**. HTTP URLs do not include `src/` (e.g. file `src/a
 | `src/lib/server/request.ts` | `parseJsonBody` / `readTrimmed` / `normalizeIdentifier` |
 | `src/lib/server/secrets.ts` | Dedicated `JWT_SECRET` (no Mongo URI fallback) |
 | `src/lib/server/hash.ts` | OTP HMAC helpers |
-| `src/lib/server/otp-service.ts` | Hashed OTP issue/verify + rate limits |
-| `src/lib/server/chat-service.ts` | Send message, unread bump, welcome system msg |
-| `src/lib/server/circular-service.ts` | Publish circular + notification fan-out + mark read |
-| `src/lib/server/fees-service.ts` | Fee ledger ensure + demo payment |
-| `src/lib/server/enrollment-service.ts` | Student self-enrollment ensure |
-| `src/lib/server/link-service.ts` | Parent ↔ student links |
-| `src/lib/server/bus-service.ts` | Ensure route/state + client DTO |
-| `src/lib/server/attendance-service.ts` | Month attendance % |
-| `src/lib/server/feed-service.ts` | Home feed + homework counts |
-| `src/lib/server/ai-service.ts` | Rule-based AI replies |
-| `src/lib/server/engage-service.ts` | Server XP / mission actions |
+| `src/lib/server/services/*` | Domain services (otp, chat, erp, csv, seed, …) |
 | `src/lib/server/validate.ts` + `schemas.ts` | Zod body validation |
-| `src/lib/server/seed-school.ts` | Lazy demo chats/homework/class desk/bus/fees |
 | `src/middleware.ts` | OTP path rate limit |
 | `src/lib/db/mongodb.ts` | Connection (`MONGO_URI` \| `MONGODB_URI`) |
-| `src/lib/models/` | Mongoose schemas + `*ToClient` |
+| `src/lib/models/{core,comms,ops,family,erp}/` | Mongoose schemas + `*ToClient` |
 | `src/app/api/**` | Route handlers |
 
 `jsonOk` / `jsonError` are also re-exported from `src/lib/server/auth.ts` for existing route imports.
@@ -186,28 +175,44 @@ Authenticated routes require the `sc_session` cookie (browser `credentials: "inc
 | GET | `/api/attendance/summary` | Yes | Month present-% from class desk |
 | GET | `/api/feed` | Yes | Home circulars + homework slice (+ homework counts) |
 
+### ERP / MDM (`/api/erp/*`)
+
+Requires ERP console access (`requireErpUser`: role + school `productMode: erp` + active subscription; Super Admin exempt for onboarding). Detail: [ERP.md](ERP.md) · CSV: [DATA-IMPORT-EXPORT.md](DATA-IMPORT-EXPORT.md).
+
+| Method | Path | Notes |
+|--------|------|--------|
+| GET/POST | `/api/erp/students/csv` | Export / import StudentProfile (upsert `admissionNo`) |
+| GET/POST | `/api/erp/staff/csv` | Export / import StaffProfile (upsert `employeeId`) |
+| GET/POST/PATCH | `/api/erp/transfers` | Campus transfers (also usable from Connect `/transfers`) |
+| * | `/api/erp/schools`, `students`, `staff`, `classes`, `subjects`, `admissions`, `fees`, `exams`, `leaves`, `attendance/csv`, `id-cards`, `links`, `sessions`, `dashboard`, `overview`, `audit` | Desktop MDM |
+
+Modular clients may prefer `/api/v1/*` — see [ARCHITECTURE.md](ARCHITECTURE.md#15-modular-api-modules--apiv1).
+
 ---
 
 ## Main Mongo collections (models)
 
 | Model | File | Purpose |
 |-------|------|---------|
-| `School` | `src/lib/models/School.ts` | Schools |
-| `User` | `src/lib/models/User.ts` | Accounts / roles / enrollment |
-| `Class` | `src/lib/models/Class.ts` | Grade-section per school |
-| `OtpChallenge` | `src/lib/models/OtpChallenge.ts` | OTP + TTL |
-| `TeacherInvite` | `src/lib/models/TeacherInvite.ts` | Staff invites |
-| `StudentEnrollment` | `src/lib/models/StudentEnrollment.ts` | Student approval pipeline |
-| `Chat` / `Message` | `src/lib/models/Chat.ts`, `Message.ts` | Messaging |
-| `Homework` / `Notification` | … | Assignments & alerts |
-| `Leave` | `src/lib/models/Leave.ts` | Leave requests |
-| `ClassDesk` | `src/lib/models/ClassDesk.ts` | Roster + attendance + circulars |
-| `AdminData` | `src/lib/models/AdminData.ts` | Sessions + promotion log |
-| `StudentEngage` | `src/lib/models/StudentEngage.ts` | Per-user XP state |
-| `ParentStudentLink` | `src/lib/models/ParentStudentLink.ts` | Parent ↔ student FK links |
-| `BusState` | `src/lib/models/BusState.ts` | Live bus progress / alerts |
-| `BusRoute` | `src/lib/models/BusRoute.ts` | Route path SVG + stops (template → DB) |
-| `FeeAccount` | `src/lib/models/FeeAccount.ts` | Outstanding fees + payment history |
+| `School` | `src/lib/models/core/School.ts` | Schools |
+| `User` | `src/lib/models/core/User.ts` | Accounts / roles / enrollment |
+| `Class` | `src/lib/models/core/Class.ts` | Grade-section per school |
+| `OtpChallenge` | `src/lib/models/core/OtpChallenge.ts` | OTP + TTL |
+| `TeacherInvite` | `src/lib/models/core/TeacherInvite.ts` | Staff invites |
+| `StudentEnrollment` | `src/lib/models/core/StudentEnrollment.ts` | Student approval pipeline |
+| `Chat` / `Message` | `comms/` | Messaging |
+| `Homework` / `Notification` | `comms/` | Assignments & alerts |
+| `Leave` | `ops/Leave.ts` | Leave requests |
+| `ClassDesk` | `ops/ClassDesk.ts` | Roster + attendance + circulars |
+| `AdminData` | `core/AdminData.ts` | Sessions + promotion log |
+| `StudentEngage` | `family/StudentEngage.ts` | Per-user XP state |
+| `ParentStudentLink` | `family/ParentStudentLink.ts` | Parent ↔ student FK links |
+| `BusState` / `BusRoute` | `ops/` | Live bus progress / route |
+| `FeeAccount` | `family/FeeAccount.ts` | Outstanding fees + payment history |
+| `StudentProfile` / `StaffProfile` | `erp/` | ERP SIS / staff MDM (+ CSV) |
+| `BranchTransfer` | `erp/BranchTransfer.ts` | Inter-campus transfer requests |
+| `FeeStructure` / `FeeInvoice` / `FeePayment` | `erp/` | ERP fee catalog + invoices |
+| `AdmissionApplication`, `Subject`, `Exam`, `ExamMark`, `AcademicSession`, `ErpAuditLog` | `erp/` | ERP MDM |
 
 Connection helper: `src/lib/db/mongodb.ts`  
 - Accepts **`MONGODB_URI` or `MONGO_URI`**  

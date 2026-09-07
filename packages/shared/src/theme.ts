@@ -1,0 +1,31 @@
+/** Design tokens — shared by web CSS vars and React Native StyleSheet. */
+export const theme = {
+  blue: "#2563EB",
+  blueDark: "#1E40AF",
+  blueDeep: "#172554",
+  blueLight: "#DBEAFE",
+  blueTint: "#EFF6FF",
+  teal: "#0D9488",
+  tealDark: "#0F766E",
+  tealLight: "#CCFBF1",
+  tealTint: "#F0FDFA",
+  ink: "#172554",
+  slate: "#64748B",
+  paper: "#F8FAFC",
+  white: "#FFFFFF",
+  yellow: "#FBBF24",
+  yellowTint: "#FFFBEB",
+  orange: "#F59E0B",
+  orangeTint: "#FFF7ED",
+  green: "#22C55E",
+  greenDark: "#16A34A",
+  greenTint: "#F0FDF4",
+  danger: "#EF4444",
+  line: "#E2E8F0",
+  whatsapp: "#25D366",
+  radiusCard: 14,
+  radiusBtn: 12,
+  radiusChip: 12,
+} as const;
+
+export type Theme = typeof theme;

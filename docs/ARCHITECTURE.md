@@ -1,17 +1,8 @@
 # SchoolConnect — System & Source Architecture
 
-Current architecture after the Mongo/API migration, feature hardening (chats, circulars, family parity), and **`src/` layout** reorganization.
+Monorepo layout after Mongo/API migration, family parity, ERP, transfers, CSV MDM, and modular `/api/v1`.
 
-Related docs:
-
-| Doc | Contents |
-|-----|----------|
-| [README.md](../README.md) | Setup, seed, demo accounts, scripts |
-| [BACKEND.md](BACKEND.md) | API routes + Mongo models |
-| [ROLES-AND-FEATURES.md](ROLES-AND-FEATURES.md) | Per-role UI/API access matrix |
-| [NEXT-TASKS.md](NEXT-TASKS.md) | Ordered next sprint |
-| [BACKLOG.md](BACKLOG.md) | Shipped + open roadmap |
-| [DEPLOY.md](DEPLOY.md) | Docker / VPS |
+**Docs hub:** [README.md](./README.md) · **BRD:** [BRD.md](./BRD.md) · **Modes:** [PRODUCT-MODES.md](PRODUCT-MODES.md) · **API map:** [BACKEND.md](BACKEND.md) · **ERP:** [ERP.md](ERP.md) · **CSV:** [DATA-IMPORT-EXPORT.md](DATA-IMPORT-EXPORT.md)
 
 ---
 
@@ -23,11 +14,9 @@ Related docs:
 | Styling | Plain CSS — `src/app/globals.css` (mobile-first phone shell) |
 | Data | **MongoDB** + **Mongoose** |
 | Auth | OTP → httpOnly JWT cookie `sc_session` (`jose`) |
-| Validation | **Zod** (`src/lib/server/schemas.ts`) |
-| Tests | **Vitest** under `tests/` (outside `src/`) |
-| Alias | `@/*` → `src/*` (`tsconfig.json`) |
-
-**URLs are stable:** files live under `src/app/…`, but browser paths stay `/chats`, `/api/fees`, etc.
+| Validation | **Zod** (`apps/web` schemas + `@schoolconnect/shared`) |
+| Tests | **Vitest** under `apps/web/tests/` |
+| Alias | `@/*` → `apps/web/src/*` |
 
 ---
 
@@ -35,36 +24,33 @@ Related docs:
 
 ```text
 schoolconnect/
-├── src/                          # ALL application source
-│   ├── app/                      # Next.js App Router
-│   │   ├── layout.tsx            # Providers + global CSS
-│   │   ├── page.tsx              # Role-aware home
-│   │   ├── globals.css
-│   │   ├── api/                  # REST handlers → /api/*
-│   │   └── <route>/page.tsx      # UI screens
-│   ├── components/               # Shared UI (PhoneShell, Icons, …)
-│   ├── lib/
-│   │   ├── providers/            # Client React contexts
-│   │   ├── shared/               # Isomorphic helpers (safe in client+server)
-│   │   ├── server/               # Server-only services & guards
-│   │   ├── models/               # Mongoose schemas + *ToClient
-│   │   └── db/mongodb.ts         # Connection helper
-│   └── middleware.ts             # OTP rate-limit (/api/auth/otp/*)
-├── public/                       # Static (robots.txt, …)
-├── tests/                        # Unit tests (Vitest)
-├── scripts/seed.ts               # Demo Mongo seed
-├── docs/                         # This folder
-├── deploy/                       # Dockerfile + compose
-├── package.json
-├── tsconfig.json                 # paths: @/* → ./src/*
-├── next.config.ts
-├── vitest.config.mts
-└── eslint.config.mjs
+├── apps/
+│   ├── web/                         # Next.js UI + /api
+│   │   └── src/
+│   │       ├── app/                 # Pages + api/ + erp/
+│   │       ├── components/
+│   │       │   ├── shell/           # PhoneShell, StatusUI, Icons, …
+│   │       │   ├── admin/           # EnrollmentDesk
+│   │       │   └── erp/             # ErpShell, CSV, TransferDesk
+│   │       ├── lib/
+│   │       │   ├── db/
+│   │       │   ├── models/          # core · comms · ops · family · erp
+│   │       │   ├── providers/
+│   │       │   ├── server/          # http/auth infra + services/
+│   │       │   └── shared/          # apiFetch + package re-exports
+│   │       ├── modules/             # /api/v1 domain modules
+│   │       ├── shared/              # v1 RBAC + tenant helpers
+│   │       └── STRUCTURE.md         # Folder roles cheat-sheet
+│   └── mobile/                      # React Native Family MVP
+├── packages/
+│   └── shared/                      # @schoolconnect/shared
+├── docs/
+├── deploy/
+└── README.md
 ```
 
-| Inside `src/` | Outside `src/` |
-|---------------|----------------|
-| Pages, API, components, lib, middleware | `public`, `tests`, `scripts`, `docs`, `deploy`, configs, env templates |
+Web alias `@/*` → `apps/web/src/*`. Browser URLs stay `/chats`, `/api/fees`, `/erp`, etc.
+Folder cheat-sheet: [`apps/web/src/STRUCTURE.md`](../apps/web/src/STRUCTURE.md).
 
 ---
 
@@ -74,15 +60,16 @@ schoolconnect/
 flowchart TB
   subgraph browser [Browser]
     Pages["src/app/**/page.tsx"]
-    Components["src/components"]
+    Components["src/components shell·admin·erp"]
     Providers["src/lib/providers"]
-    Shared["src/lib/shared<br/>api-client · roles · dates"]
+    Shared["src/lib/shared"]
   end
   subgraph next [Next.js]
     MW["src/middleware.ts"]
     Api["src/app/api/**/route.ts"]
-    Server["src/lib/server/*-service"]
-    Models["src/lib/models"]
+    Infra["src/lib/server http·auth"]
+    Server["src/lib/server/services"]
+    Models["src/lib/models domain folders"]
     DB["src/lib/db/mongodb"]
   end
   Mongo[(MongoDB)]
@@ -91,6 +78,7 @@ flowchart TB
   Providers --> Shared
   Providers -->|fetch credentials:include| Api
   MW -->|OTP paths only| Api
+  Api --> Infra
   Api --> Server
   Api --> Models
   Server --> Models
@@ -102,12 +90,12 @@ flowchart TB
 | Layer | Path | Responsibility |
 |-------|------|----------------|
 | UI routes | `src/app/**/page.tsx` | Screens only — no business DB access |
-| Components | `src/components/` | Shell, icons, enrollment desk, status UI |
+| Components | `src/components/{shell,admin,erp}/` | Shell chrome, enrollment desk, ERP panels |
 | Providers | `src/lib/providers/` | Client state; `apiFetch` when Mongo is up |
 | Shared | `src/lib/shared/` | Pure helpers usable on client + server |
 | API | `src/app/api/**/route.ts` | HTTP boundary |
-| Server | `src/lib/server/` | Auth, Zod, domain services, seed bootstrap |
-| Models | `src/lib/models/` | Schemas + `*ToClient` DTOs |
+| Server | `src/lib/server/` | Auth/HTTP infra; domain logic in `services/` |
+| Models | `src/lib/models/{core,comms,ops,family,erp}/` | Schemas + `*ToClient` DTOs |
 | DB | `src/lib/db/mongodb.ts` | `connectMongo` (`MONGO_URI` \| `MONGODB_URI`) |
 | Middleware | `src/middleware.ts` | In-memory OTP rate limit |
 
@@ -205,6 +193,8 @@ On boot, `AuthProvider` calls `GET /api/health`.
 | Home feed / attendance | home page | `/api/feed`, `/api/attendance/summary` | `feed-service`, `attendance-service` |
 | AI | `/ai` page | `/api/ai/chat` | `ai-service` |
 | Parent↔student | links APIs | `/api/links` | `link-service` |
+| ERP MDM | `/erp/*` pages | `/api/erp/*` (+ `students/csv`, `staff/csv`) | `erp`, `student-sync`, `csv`, models |
+| Campus transfers | `/transfers`, `/erp/transfers` | `/api/erp/transfers` | `BranchTransfer` + `erp` |
 
 Shared defaults: `src/lib/shared/engage-defaults.ts`, `bus-defaults.ts`, `roles.ts`.
 
@@ -229,12 +219,17 @@ Shared defaults: `src/lib/shared/engage-defaults.ts`, `bus-defaults.ts`, `roles.
 | `/notifications` | Alerts | |
 | `/profile` | Account + leave + sign out | |
 | `/ai` | School AI | Full-screen, `hideNav` |
+| `/transfers` | Campus transfer desk | Connect (+ ERP admins); same API as `/erp/transfers` |
+| `/erp/*` | Desktop MDM | ERP mode + subscription; see [ERP.md](ERP.md) |
 
 Role matrix detail: [ROLES-AND-FEATURES.md](ROLES-AND-FEATURES.md).
+CSV bulk load: [DATA-IMPORT-EXPORT.md](DATA-IMPORT-EXPORT.md).
 
 ---
 
-## 9. Server services (`src/lib/server`)
+## 9. Server (`src/lib/server`)
+
+**Infra (stay at package root):**
 
 | File | Role |
 |------|------|
@@ -244,26 +239,25 @@ Role matrix detail: [ROLES-AND-FEATURES.md](ROLES-AND-FEATURES.md).
 | `request.ts` | JSON parse + trimmed fields |
 | `validate.ts` + `schemas.ts` | Zod body parsing |
 | `secrets.ts` | `JWT_SECRET` |
-| `hash.ts` / `otp-service.ts` | Hashed OTP + rate limits |
-| `chat-service.ts` | Send message, unread bump, welcome msg |
-| `circular-service.ts` | Publish circular + notification fan-out |
-| `engage-service.ts` | Server-authoritative XP |
-| `fees-service.ts` | Ledger ensure + demo pay |
-| `bus-service.ts` | Route/state DTO |
-| `attendance-service.ts` | Monthly % summary |
-| `feed-service.ts` | Home “Recent” |
-| `ai-service.ts` | Rule-based assistant |
-| `enrollment-service.ts` | Student self-enrollment row |
-| `link-service.ts` | Parent ↔ student links |
-| `seed-school.ts` | Idempotent demo chats/HW/desk/bus/fees |
+| `hash.ts` | OTP HMAC helpers |
+
+**Domain (`services/`):** `otp-service`, `chat-service`, `circular-service`, `engage-service`, `fees-service`, `bus-service`, `attendance-service`, `feed-service`, `ai-service`, `enrollment-service`, `link-service`, `leave-attendance`, `erp`, `csv`, `student-sync`, `school-group`, `seed-school`.
+
+Import example: `import { issueOtp } from "@/lib/server/services/otp-service"`.
 
 ---
 
 ## 10. Models (`src/lib/models`)
 
-`School`, `User`, `Class`, `OtpChallenge`, `TeacherInvite`, `StudentEnrollment`, `Chat`, `Message`, `Homework`, `Notification`, `Leave`, `ClassDesk`, `AdminData`, `StudentEngage`, `ParentStudentLink`, `BusRoute`, `BusState`, `FeeAccount`.
+| Folder | Models |
+|--------|--------|
+| `core/` | `School`, `User`, `Class`, `OtpChallenge`, `TeacherInvite`, `StudentEnrollment`, `AdminData` |
+| `comms/` | `Chat`, `Message`, `Homework`, `Notification` |
+| `ops/` | `Leave`, `ClassDesk`, `BusRoute`, `BusState` |
+| `family/` | `StudentEngage`, `ParentStudentLink`, `FeeAccount` |
+| `erp/` | `StudentProfile`, `StaffProfile`, admissions, subjects, exams, fee MDM, sessions, transfers, audit |
 
-Each exposes a `*ToClient` mapper for JSON responses.
+Barrel: `import { … } from "@/lib/models"`. Each file exposes `*ToClient` where needed.
 
 ---
 
@@ -278,6 +272,8 @@ Each exposes a `*ToClient` mapper for JSON responses.
 | **Polling** | School data ~12s on `/chats`, ~25s elsewhere; pause when tab hidden |
 | **Bus sim** | Interval only on `/bus` or family home |
 | **Pending gate** | Unapproved enrollment → `/pending` + Status/Profile nav only |
+| **Product mode** | `productMode` + subscription gate ERP APIs; Connect keeps `/transfers` |
+| **CSV MDM** | Students/staff import upsert profiles only — no OTP users |
 
 ---
 
@@ -297,8 +293,8 @@ Page → Provider method → apiFetch("/api/…")
 
 ## 13. Adding a feature (checklist)
 
-1. Model in `src/lib/models/` (+ `toClient`)
-2. Service in `src/lib/server/` if logic is reusable
+1. Model in `src/lib/models/{core|comms|ops|family|erp}/` (+ `toClient`)
+2. Service in `src/lib/server/services/` if logic is reusable
 3. Route under `src/app/api/<resource>/`
 4. Provider method in `src/lib/providers/` (guard with `backend`)
 5. Page under `src/app/<route>/page.tsx`
@@ -315,8 +311,48 @@ Page → Provider method → apiFetch("/api/…")
 | Vitest | `vitest.config.mts` | Alias `@` → `./src` |
 | ESLint | `eslint.config.mjs` | Next core-web-vitals |
 | Docker | `deploy/Dockerfile` | Build context = repo root (sees `src/`) |
-| Seed | `npm run seed` | Imports `../src/lib/…` |
+| Seed | `npm run seed` | Imports web `src/lib/…` |
 
 ---
 
-*Keep this file aligned with the tree under `src/`. Role product details live in ROLES-AND-FEATURES.md; HTTP details in BACKEND.md.*
+## 15. Modular API (`modules/` + `/api/v1`)
+
+Domain modules + versioned routes. Legacy `/api/*` and `/api/erp/*` stay for web + mobile.
+
+```text
+apps/web/src/
+├── app/api/
+│   ├── v1/                 # Preferred for new clients
+│   ├── erp/                # Desktop ERP convenience APIs
+│   └── …                   # Existing app routes (auth, chats, …)
+├── modules/                # student · school · class · attendance · fee · leave · user
+├── shared/                 # auth · rbac · tenant
+└── lib/models/             # Canonical Mongoose schemas
+```
+
+```text
+Client → JWT (cookie/Bearer) → Authentication → Authorization (rbac + tenantSchoolId)
+  → module controller → service → repository → Mongo (always schoolId-scoped)
+```
+
+| Method | Path | Module |
+|--------|------|--------|
+| GET | `/api/v1/auth/me` | session + permissions (+ capabilities) |
+| GET/POST/PATCH | `/api/v1/students` | student |
+| GET/PATCH | `/api/v1/students/:id` | student |
+| GET | `/api/v1/schools` | school |
+| GET | `/api/v1/classes` | class |
+| GET | `/api/v1/attendance` | attendance |
+| GET | `/api/v1/fees` | fees |
+| GET/PATCH | `/api/v1/leaves` | leaves |
+| GET | `/api/v1/users` | users |
+
+**Tenant rule:** never bare `find({})` for school data — use `withTenantFilter`. `super_admin` may pass `?schoolId=`.
+
+**Fee collections:** `FeeStructure` (catalog) · `FeeInvoice` · `FeePayment` · `FeeAccount` (family ledger).
+
+**Compatibility:** PhoneShell + mobile keep `/api/*`; ERP may keep `/api/erp/*`; new integrations prefer `/api/v1/*`.
+
+---
+
+*Keep aligned with `apps/web/src` and `packages/shared`. Roles → [ROLES-AND-FEATURES.md](ROLES-AND-FEATURES.md). HTTP map → [BACKEND.md](BACKEND.md). Hub → [README.md](./README.md).*

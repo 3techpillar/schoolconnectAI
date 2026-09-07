@@ -1,0 +1,35 @@
+pluginManagement {
+    def gradlePlugin = {
+        def dir = settingsDir
+        while (dir != null) {
+            def candidate = new File(dir, "node_modules/@react-native/gradle-plugin")
+            if (candidate.exists()) {
+                return candidate.absolutePath
+            }
+            dir = dir.parentFile
+        }
+        throw new GradleException(
+            "Could not find @react-native/gradle-plugin. Run npm install from the repo root."
+        )
+    }()
+    includeBuild(gradlePlugin)
+}
+plugins { id("com.facebook.react.settings") }
+extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+rootProject.name = 'SchoolConnectMobile'
+include ':app'
+
+def reactNativeGradlePlugin = {
+    def dir = settingsDir
+    while (dir != null) {
+        def candidate = new File(dir, "node_modules/@react-native/gradle-plugin")
+        if (candidate.exists()) {
+            return candidate.absolutePath
+        }
+        dir = dir.parentFile
+    }
+    throw new GradleException(
+        "Could not find @react-native/gradle-plugin. Run npm install from the repo root."
+    )
+}()
+includeBuild(reactNativeGradlePlugin)

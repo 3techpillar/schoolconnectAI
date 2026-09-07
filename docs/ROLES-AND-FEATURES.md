@@ -1,14 +1,23 @@
 # Roles & Features — Current Implementation
 
-> **As of:** implementation snapshot matching the codebase under **`src/`**  
-> **Scope:** What each role can do **today** (UI + API), not backlog ideas.  
-> **Related:** [ARCHITECTURE.md](./ARCHITECTURE.md) (source layout) · [BACKEND.md](./BACKEND.md) · [NEXT-TASKS.md](./NEXT-TASKS.md) · [BACKLOG.md](./BACKLOG.md)
+> **Docs hub:** [README.md](./README.md) · [PRODUCT-MODES.md](./PRODUCT-MODES.md) · [BRD.md](./BRD.md) · [ARCHITECTURE.md](./ARCHITECTURE.md) · [BACKEND.md](./BACKEND.md) · [BACKLOG.md](./BACKLOG.md)
 
 ---
 
 ## 1. Overview
 
-SchoolConnect is a **WhatsApp-first, mobile** school app. Source code lives in `src/`; browser URLs do not include `src/`. Access is driven by the user’s `role` on their Mongo `User` document (JWT cookie session).
+SchoolConnect is a **WhatsApp-first** school app (web phone shell + React Native). Access is driven by the user’s `role` **and** the school’s `productMode` / `capabilities` / subscription from `/api/me`.
+
+Admins also use **`/transfers`** (Connect) or **`/erp/transfers`** (ERP) for campus moves — same `groupCode` or destination `transferPolicy: open`.
+
+### Product mode (school tenant)
+
+| Mode | Effect |
+|------|--------|
+| `connect` | Collab app only — no `/erp`; Fees nav hidden by default |
+| `erp` | Connect + desktop `/erp` MDM; Fees module on |
+
+Helpers: `schoolHasModule`, `canAccessErpConsole` in `@schoolconnect/shared`. See [PRODUCT-MODES.md](./PRODUCT-MODES.md).
 
 ### Roles
 
@@ -17,18 +26,21 @@ SchoolConnect is a **WhatsApp-first, mobile** school app. Source code lives in `
 | `parent` | Parent | **Family** (same chrome as student) |
 | `student` | Student | **Family** |
 | `class_teacher` | Class Teacher | **Teacher** |
-| `principal` | Principal | **Teacher** UI · broader **API** |
+| `principal` | Principal | **Teacher** UI · broader **API** / ERP if mode allows |
 | `bus_attendant` | Bus Attendant | **Default** (generic home) |
-| `admin` | School Admin | **Admin** |
-| `super_admin` | Super Admin | **Admin** + Schools tab |
+| `accountant` | Accountant | **ERP** fees-focused (ERP mode) |
+| `admin` | School Admin | **Admin** (+ ERP if mode allows) |
+| `super_admin` | Super Admin | **Admin** + Schools + always ERP onboard |
 
-### Role helpers (`src/lib/shared/roles.ts`)
+### Role helpers (`@schoolconnect/shared` / `src/lib/shared/roles.ts`)
 
 | Helper | True for |
 |--------|----------|
 | `isFamilyRole` | `parent`, `student` |
 | `isSchoolAdminRole` / `isSchoolAdmin` | `admin`, `super_admin` |
 | `isSuperAdminRole` | `super_admin` |
+| `canAccessErp` | `admin`, `principal`, `super_admin`, `accountant` |
+| `canAccessErpConsole` | `canAccessErp` **and** school ERP mode (`super_admin` always) |
 | `canBroadcastNotification` | `class_teacher`, `principal`, `admin`, `super_admin` |
 | `canWriteBusProgress` | `bus_attendant`, `principal`, `admin`, `super_admin` |
 | `canPostAsTeacher` (UI, `school-data.tsx`) | `class_teacher`, `principal` only (**not** admin) |
@@ -37,10 +49,10 @@ SchoolConnect is a **WhatsApp-first, mobile** school app. Source code lives in `
 
 Parents and students share:
 
-- Bottom nav: **Home · Chats · Homework · Zone · Fees**
-- Home dashboard: Learning Zone, fees, bus ETA, attendance, AI
+- Bottom nav: **Home · Chats · Homework · Zone** (+ **Fees** when `capabilities.fees`)
+- Home dashboard: Learning Zone, bus ETA, attendance, AI (fees when enabled)
 - Engage XP / missions (`POST /api/engage`)
-- Homework status updates, fees pay (own ledger), chats, circulars (read), bus track/alerts, AI, leave apply
+- Homework status, chats, circulars (read), bus track/alerts, AI, leave apply
 
 **Small differences:**
 
@@ -65,7 +77,7 @@ Unless noted, any logged-in school user can:
 | Chats list + thread + send | `/chats`, `/chats/[id]`, `/api/chats*` | Rich post kinds (homework/activity/progress) = teachers |
 | Homework list + status | `/homework`, `GET/PATCH /api/homework*` | **Create** = teacher/principal only |
 | Circulars read | `/circulars` | Mark circular read via class-desk |
-| Fees view + demo Pay | `/fees`, `/api/fees` | Own `FeeAccount` — no staff fee console |
+| Fees view + demo Pay | `/fees`, `/api/fees` | Own `FeeAccount`; **hidden in Connect** (`capabilities.fees`) |
 | Bus map / ETA / alerts | `/bus`, `GET /api/bus` | Progress write = `canWriteBusProgress` |
 | Attendance calendar (personal) | `/attendance` | Roster marking = teacher UI |
 | Home feed | `GET /api/feed` | |
@@ -79,14 +91,14 @@ Unless noted, any logged-in school user can:
 
 ## 3. Bottom navigation by role
 
-Defined in `src/components/PhoneShell.tsx`.
+Defined in `src/components/shell/PhoneShell.tsx`.
 
 | Role | Tabs |
 |------|------|
-| Parent / Student | Home · Chats · Homework · Zone · Fees |
+| Parent / Student | Home · Chats · Homework · Zone · (+ Fees if module on) |
 | Class Teacher / Principal | Home · Class · Chats · Homework · Attend |
-| Admin / Super Admin | Home · Admin · Chats · Notice · Fees |
-| Bus Attendant (default) | Home · Chats · Homework · Attend · Fees |
+| Admin / Super Admin | Home · Admin · Chats · Notice · (+ Fees if module on) |
+| Bus Attendant (default) | Home · Chats · Homework · Attend · (+ Fees if module on) |
 
 Header (all): **Notifications** + **Profile** (Sign out lives on Profile).
 
@@ -356,15 +368,15 @@ Demo OTP: **`000000`** (when demo mode enabled).
 | Concern | Primary files |
 |---------|----------------|
 | Role helpers | `src/lib/shared/roles.ts` |
-| Bottom nav / pending gate | `src/components/PhoneShell.tsx` |
+| Bottom nav / pending gate | `src/components/shell/PhoneShell.tsx` |
 | Home dashboards | `src/app/page.tsx` |
 | Teacher UI flag | `src/lib/providers/school-data.tsx` → `canPostAsTeacher` |
 | Admin UI | `src/app/admin/page.tsx`, `src/lib/providers/admin-data.tsx` |
-| Class desk | `src/app/class/page.tsx`, `src/app/api/class-desk/route.ts`, `src/lib/server/circular-service.ts` |
+| Class desk | `src/app/class/page.tsx`, `src/app/api/class-desk/route.ts`, `src/lib/server/services/circular-service.ts` |
 | Engage | `src/app/engage/page.tsx`, `src/app/api/engage/route.ts` |
-| Enrollment | `src/components/EnrollmentDesk.tsx`, `src/app/api/enrollments/*`, `src/app/pending/page.tsx` |
+| Enrollment | `src/components/admin/EnrollmentDesk.tsx`, `src/app/api/enrollments/*`, `src/app/pending/page.tsx` |
 | Auth register / invites | `src/app/api/auth/register/route.ts`, `src/app/api/invites/*` |
 
 ---
 
-*This document describes the **current** SchoolConnect implementation. For planned work, see [BACKLOG.md](./BACKLOG.md).*
+*This document describes the **current** SchoolConnect implementation. Product modes: [PRODUCT-MODES.md](./PRODUCT-MODES.md). Open work: [BACKLOG.md](./BACKLOG.md).*
