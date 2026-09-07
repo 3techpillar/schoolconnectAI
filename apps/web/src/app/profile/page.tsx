@@ -14,6 +14,7 @@ import { useBusTrack } from "@/lib/providers/bus-track";
 import { toIsoDate } from "@/lib/shared/dates";
 import { Bus, CalendarCheck, LogOut, ShieldCheck } from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
+import { ParentLinksPanel } from "@/components/ParentLinksPanel";
 
 export default function ProfilePage() {
   const { user, updateUser, refreshUser, logout } = useAuth();
@@ -261,6 +262,16 @@ export default function ProfilePage() {
           Save account
         </button>
       </form>
+
+      {user.role === "parent" && (
+        <ParentLinksPanel
+          user={user}
+          onLinked={(studentName) => {
+            setChildName(studentName);
+            void refreshUser();
+          }}
+        />
+      )}
 
       <div className="row mt-3" style={{ gap: 8 }}>
         <Link href="/bus" className="btn-secondary grow">

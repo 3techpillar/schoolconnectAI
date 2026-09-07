@@ -60,7 +60,7 @@ export function PhoneShell({
 
   const isFamily = isFamilyRole(user?.role);
   const isTeacher = canPostAsTeacher(user);
-  const isAdmin = isSchoolAdmin(user);
+  const isAdmin = isSchoolAdmin(user) || user?.role === "principal";
   const needsSetup =
     needsSchoolAssignment(user, backend) || needsEnrollmentApproval(user);
   const showFees = Boolean(user?.capabilities?.fees);
@@ -82,7 +82,7 @@ export function PhoneShell({
             { to: "/circulars", label: "Notice", icon: Bell, tone: "orange" as const },
             ...(showFees
               ? [{ to: "/fees", label: "Fees", icon: Wallet, tone: "green" as const }]
-              : []),
+              : [{ to: "/class", label: "Class", icon: GraduationCap, tone: "teal" as const }]),
           ]
         : isTeacher
           ? [
@@ -119,7 +119,7 @@ export function PhoneShell({
               },
               ...(showFees
                 ? [{ to: "/fees", label: "Fees", icon: Wallet, tone: "teal" as const }]
-                : []),
+                : [{ to: "/more", label: "More", icon: Menu, tone: "slate" as const }]),
             ]
   ) as NavItem[];
 

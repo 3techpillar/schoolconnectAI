@@ -113,7 +113,12 @@ export default function AdminPage() {
   }, [students, teacherClass.roster]);
 
   useEffect(() => {
-    if (tab !== "attendance" || !user || !isSchoolAdmin(user)) return;
+    if (
+      tab !== "attendance" ||
+      !user ||
+      !(isSchoolAdmin(user) || user.role === "principal")
+    )
+      return;
     let cancelled = false;
     setAttendanceLoading(true);
     void apiFetch<AttendanceReport>("/api/attendance/report")
@@ -139,16 +144,16 @@ export default function AdminPage() {
     );
   }
 
-  if (!isSchoolAdmin(user)) {
+  if (!isSchoolAdmin(user) && user.role !== "principal") {
     return (
       <PhoneShell title="Admin" subtitle="Access restricted">
         <section className="card card-pad">
-          <p className="font-semibold">School Admin only</p>
+          <p className="font-semibold">School Admin / Principal only</p>
           <p className="text-sm muted mt-1">
-            Sign up or switch to <strong>School Admin</strong> or{" "}
-            <strong>Super Admin</strong> to open this console. Your saved role
-            cannot be changed from profile after setup — an admin must update
-            it.
+            Sign in as <strong>School Admin</strong>, <strong>Principal</strong>
+            , or <strong>Super Admin</strong> to open this console. Your saved
+            role cannot be changed from profile after setup — an admin must
+            update it.
           </p>
         </section>
       </PhoneShell>

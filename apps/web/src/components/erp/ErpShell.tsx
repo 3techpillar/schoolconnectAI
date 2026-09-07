@@ -18,6 +18,7 @@ const NAV = [
   { href: "/erp/attendance", label: "Attendance" },
   { href: "/erp/leaves", label: "Leaves" },
   { href: "/erp/exams", label: "Exams" },
+  { href: "/erp/report-cards", label: "Report cards" },
   { href: "/erp/fees", label: "Fees" },
   { href: "/erp/staff", label: "Staff" },
   { href: "/erp/id-cards", label: "ID cards" },

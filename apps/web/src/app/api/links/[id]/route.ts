@@ -40,6 +40,16 @@ async function patchHandler(req: Request, ctx: Ctx) {
   if (parsed.data.status) link.status = parsed.data.status;
   if (typeof parsed.data.primary === "boolean") {
     link.primary = parsed.data.primary;
+    if (parsed.data.primary) {
+      await ParentStudentLink.updateMany(
+        {
+          parentUserId: link.parentUserId,
+          _id: { $ne: link._id },
+          status: "active",
+        },
+        { $set: { primary: false } },
+      );
+    }
   }
   if (parsed.data.relationship) link.relationship = parsed.data.relationship;
   await link.save();
