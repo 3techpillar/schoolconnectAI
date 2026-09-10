@@ -20,19 +20,6 @@ import {
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 import { addDaysIso, formatDueLabel, isDueOverdue, toIsoDate } from "@/lib/shared/dates";
 
-const subjectColor: Record<string, string> = {
-  Math: "pill pill-info",
-  Science: "pill pill-success",
-  English: "pill pill-secondary",
-  Hindi: "pill pill-warning",
-};
-
-const priorityClass: Record<string, string> = {
-  high: "priority-high",
-  medium: "priority-medium",
-  low: "priority-low",
-};
-
 export default function HomeworkPage() {
   const { user } = useAuth();
   const {
@@ -123,22 +110,16 @@ export default function HomeworkPage() {
       title="Homework"
       headerAccent="plain"
     >
-      <section className="list-hero list-hero-blue">
-        <p className="list-hero-kicker">Assignments</p>
-        <h2 className="list-hero-title">Homework desk</h2>
-        <p className="list-hero-body">
-          Track due work, mark progress, and stay ahead of overdue items.
-        </p>
-      </section>
-
-      <div className="card card-pad summary-3">
+      {/* 3-Stat Summary Header */}
+      <div className="card card-pad summary-3 mt-1">
         <Stat label="Pending" value={String(counts.pending)} tone="tone-warning" />
         <Stat label="In progress" value={String(counts.progress)} tone="tone-info" />
         <Stat label="Done" value={String(counts.done)} tone="tone-success" />
       </div>
 
-      <div className="row mt-4" style={{ justifyContent: "space-between", gap: 8 }}>
-        <div className="chip-row" style={{ flex: 1 }}>
+      {/* Subject Filter Bar */}
+      <div className="row mt-4" style={{ justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+        <div className="chip-row" style={{ flex: 1, paddingBottom: 2 }}>
           {subjects.map((t) => (
             <button
               key={t}
@@ -153,7 +134,13 @@ export default function HomeworkPage() {
         {teacher && (
           <button
             type="button"
-            className="icon-btn muted"
+            className="icon-btn"
+            style={{
+              background: showForm ? "var(--blue-tint)" : "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--primary)",
+              flexShrink: 0,
+            }}
             aria-label="Add homework"
             onClick={() => setShowForm((v) => !v)}
           >
@@ -162,11 +149,15 @@ export default function HomeworkPage() {
         )}
       </div>
 
+      {/* Teacher Post Drawer */}
       {teacher && showForm && (
-        <form className="card card-pad mt-3 space-y" onSubmit={onCreate}>
-          <p className="font-semibold text-sm" style={{ margin: 0 }}>
-            Post homework to class
-          </p>
+        <form className="card card-pad mt-3 space-y" onSubmit={onCreate} style={{ borderColor: "rgba(37, 99, 235, 0.3)" }}>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <p className="font-semibold text-sm" style={{ margin: 0 }}>
+              Assign Class Homework
+            </p>
+            <span className="text-10 muted">Class {user.className || "6-B"}</span>
+          </div>
           <div className="wa-meta-row">
             <select
               className="wa-select"
@@ -184,16 +175,16 @@ export default function HomeworkPage() {
               value={priority}
               onChange={(e) => setPriority(e.target.value as HomeworkPriority)}
             >
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="high">High priority</option>
+              <option value="medium">Medium priority</option>
+              <option value="low">Low priority</option>
             </select>
           </div>
           <input
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Homework title"
+            placeholder="Assignment description / exercises"
             required
           />
           <label>
@@ -207,75 +198,76 @@ export default function HomeworkPage() {
               required
             />
           </label>
-          <p className="text-11 muted" style={{ margin: 0 }}>
-            Shows as: <strong>{formatDueLabel(dueDate)}</strong> ({dueDate})
-          </p>
           <button type="submit" className="btn-primary">
-            Post homework
+            Post Homework Assignment
           </button>
         </form>
       )}
 
-      <ul className="feed mt-4">
+      {/* Homework Cards List */}
+      <ul className="hw-container">
         {filtered.map((it) => {
           const overdue = isDueOverdue(it.dueDate, it.status);
+          const isDone = it.status === "submitted" || it.status === "reviewed";
           return (
-          <li key={it.id} style={{ flexDirection: "column", alignItems: "stretch" }}>
-            <div className="row" style={{ gap: "0.5rem" }}>
-              <span className={subjectColor[it.subject] || "pill pill-info"}>
-                {it.subject}
-              </span>
-              <span className={priorityClass[it.priority]}>
-                {it.priority[0].toUpperCase() + it.priority.slice(1)}
-              </span>
-              <span
-                className={`text-11 ${overdue ? "tone-destructive font-semibold" : "muted"}`}
-                style={{
-                  marginLeft: "auto",
-                  display: "inline-flex",
-                  gap: 4,
-                  alignItems: "center",
-                }}
-              >
-                <Clock size={12} />
-                {overdue ? "Overdue · " : "Due "}
-                {it.due}
-              </span>
-            </div>
-            <p className="font-medium text-15 mt-2">{it.title}</p>
-            <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
-              Submit by{" "}
-              <strong style={{ color: "var(--foreground)" }}>
-                {it.dueDate
-                  ? new Date(it.dueDate + "T12:00:00").toLocaleDateString(
-                      undefined,
-                      { day: "numeric", month: "short", year: "numeric" },
-                    )
-                  : it.due}
-              </strong>
-              {" · "}Posted by {it.postedBy} · Class {it.className}
-            </p>
-            <div className="row mt-2" style={{ justifyContent: "space-between" }}>
-              <div className="row text-xs muted" style={{ gap: "0.75rem" }}>
-                {it.attachments > 0 && (
-                  <span className="row" style={{ gap: 4 }}>
-                    <Paperclip size={14} /> {it.attachments}
+            <li key={it.id} className={`hw-card ${overdue ? "is-overdue" : ""} ${isDone ? "is-submitted" : ""}`}>
+              <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                <div className="row" style={{ gap: 6, alignItems: "center" }}>
+                  <span className={`hw-subject-tag hw-subject-${it.subject}`}>
+                    {it.subject}
                   </span>
-                )}
-                <StatusPill status={it.status} />
+                  <span className={`hw-priority-pill hw-priority-${it.priority}`}>
+                    {it.priority}
+                  </span>
+                </div>
+                <span
+                  className={`text-11 ${overdue ? "tone-destructive font-semibold" : "muted"}`}
+                  style={{
+                    display: "inline-flex",
+                    gap: 4,
+                    alignItems: "center",
+                  }}
+                >
+                  <Clock size={12} />
+                  {overdue ? "Overdue · " : "Due "}
+                  {it.due}
+                </span>
               </div>
-              <button
-                type="button"
-                className="text-xs font-semibold tone-primary"
-                onClick={() => cycleStatus(it.id, it.status)}
-              >
-                {teacher ? "Update status" : "Mark progress"}
-              </button>
-            </div>
-          </li>
+
+              <h3 className="font-semibold text-15 mt-2" style={{ margin: "0.5rem 0 0.25rem", color: "var(--foreground)" }}>
+                {it.title}
+              </h3>
+
+              <p className="text-11 muted" style={{ margin: "0 0 0.75rem" }}>
+                Class {it.className} · Posted by {it.postedBy}
+              </p>
+
+              <div className="row" style={{ justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" }}>
+                <div className="row text-xs muted" style={{ gap: "0.75rem", alignItems: "center" }}>
+                  {it.attachments > 0 && (
+                    <span className="row" style={{ gap: 4 }}>
+                      <Paperclip size={13} /> {it.attachments}
+                    </span>
+                  )}
+                  <StatusPill status={it.status} />
+                </div>
+                <button
+                  type="button"
+                  className="hw-cycle-btn"
+                  onClick={() => cycleStatus(it.id, it.status)}
+                >
+                  {it.status === "pending"
+                    ? "Start task"
+                    : it.status === "in-progress"
+                      ? "Submit ✓"
+                      : "Completed"}
+                </button>
+              </div>
+            </li>
           );
         })}
       </ul>
+
       {filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
@@ -299,10 +291,10 @@ function Stat({
 }) {
   return (
     <div>
-      <p className={`font-bold ${tone}`} style={{ fontSize: "1.5rem", margin: 0 }}>
+      <p className={`font-bold ${tone}`} style={{ fontSize: "1.4rem", margin: 0, lineHeight: 1.2 }}>
         {value}
       </p>
-      <p className="text-11 muted mt-1">{label}</p>
+      <p className="text-11 muted mt-1" style={{ margin: "4px 0 0" }}>{label}</p>
     </div>
   );
 }
@@ -311,20 +303,20 @@ function StatusPill({ status }: { status: string }) {
   if (status === "submitted" || status === "reviewed") {
     return (
       <span className="row tone-success font-medium" style={{ gap: 4 }}>
-        <CheckCircle2 size={14} /> {status === "reviewed" ? "Reviewed" : "Submitted"}
+        <CheckCircle2 size={13} /> {status === "reviewed" ? "Reviewed" : "Submitted"}
       </span>
     );
   }
   if (status === "in-progress") {
     return (
       <span className="row tone-info font-medium" style={{ gap: 4 }}>
-        <Clock size={14} /> In progress
+        <Clock size={13} /> In progress
       </span>
     );
   }
   return (
     <span className="row tone-warning font-medium" style={{ gap: 4 }}>
-      <AlertTriangle size={14} /> Pending
+      <AlertTriangle size={13} /> Pending
     </span>
   );
 }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { PhoneShell } from "@/components/shell/PhoneShell";
 import { useSchoolData, formatChatTime } from "@/lib/providers/school-data";
-import { Search, Pin, MessageCircle } from "@/components/shell/Icons";
+import { Search, Pin, MessageCircle, CheckCheck } from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 import { useMemo, useState } from "react";
 
@@ -37,21 +37,16 @@ export default function ChatsPage() {
       subtitle={unreadCount ? `${unreadCount} unread` : "All caught up"}
       headerAccent="plain"
     >
-      <section className="list-hero list-hero-teal">
-        <p className="list-hero-kicker">School messaging</p>
-        <h2 className="list-hero-title">Stay close to class &amp; teachers</h2>
-        <p className="list-hero-body">
-          Homework, circulars and parent notes in one trusted thread.
-        </p>
-      </section>
-
-      <div className="chat-search">
-        <Search size={16} />
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search class, teacher, bus…"
-        />
+      {/* Search Bar */}
+      <div className="chat-search-wrapper">
+        <div className="chat-search-box">
+          <Search size={16} />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search class, teacher, route…"
+          />
+        </div>
       </div>
 
       {filtered.length === 0 ? (
@@ -66,31 +61,43 @@ export default function ChatsPage() {
           }
         />
       ) : (
-        <ul className="chat-list mt-3">
+        <ul className="chat-list-card">
           {filtered.map((chat) => {
             const msgs = getMessages(chat.id);
             const last = msgs[msgs.length - 1];
             return (
               <li key={chat.id}>
-                <Link href={`/chats/${chat.id}`} className="chat-row">
-                  <div className={`chat-avatar kind-${chat.kind}`}>{chat.avatar}</div>
-                  <div className="grow">
+                <Link href={`/chats/${chat.id}`} className="chat-item-row">
+                  <div className="chat-avatar-ring">
+                    <div className={`chat-avatar kind-${chat.kind}`}>{chat.avatar}</div>
+                    <span className="chat-status-dot" />
+                  </div>
+                  <div className="grow" style={{ minWidth: 0 }}>
                     <div className="row" style={{ justifyContent: "space-between", gap: 8 }}>
-                      <p className="font-semibold text-15 truncate" style={{ margin: 0 }}>
+                      <p className="font-semibold text-15 truncate" style={{ margin: 0, color: "var(--foreground)" }}>
                         {chat.title}
                         {chat.pinned && (
-                          <Pin size={12} style={{ marginLeft: 6, opacity: 0.55 }} />
+                          <Pin size={12} style={{ marginLeft: 6, color: "#f59e0b" }} />
                         )}
                       </p>
-                      <span className="text-10 muted">{formatChatTime(chat.lastMessageAt)}</span>
+                      <span className="text-10 muted" style={{ flexShrink: 0 }}>
+                        {formatChatTime(chat.lastMessageAt)}
+                      </span>
                     </div>
-                    <div className="row" style={{ justifyContent: "space-between", gap: 8, marginTop: 2 }}>
-                      <p className="text-xs muted truncate" style={{ margin: 0 }}>
-                        {last
-                          ? `${last.kind !== "text" && last.kind !== "system" ? `[${last.kind.replace("_", " ")}] ` : ""}${last.text}`
-                          : chat.subtitle}
+                    <div className="row" style={{ justifyContent: "space-between", gap: 8, marginTop: 3 }}>
+                      <p className="text-xs muted truncate" style={{ margin: 0, display: "flex", alignItems: "center", gap: 4 }}>
+                        {last?.senderId && (
+                          <span style={{ color: "#3b82f6", display: "inline-flex", flexShrink: 0 }}>
+                            <CheckCheck size={13} />
+                          </span>
+                        )}
+                        <span className="truncate">
+                          {last
+                            ? `${last.kind !== "text" && last.kind !== "system" ? `[${last.kind.replace("_", " ")}] ` : ""}${last.text}`
+                            : chat.subtitle}
+                        </span>
                       </p>
-                      {chat.unread > 0 && <span className="unread-pill">{chat.unread}</span>}
+                      {chat.unread > 0 && <span className="wa-unread-badge">{chat.unread}</span>}
                     </div>
                   </div>
                 </Link>
