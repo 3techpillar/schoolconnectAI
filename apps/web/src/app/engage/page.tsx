@@ -95,68 +95,58 @@ export default function EngagePage() {
         </div>
       )}
 
-      <section className="list-hero list-hero-yellow" style={{ marginBottom: "0.75rem" }}>
-        <p className="list-hero-kicker">Learning Zone</p>
-        <h2 className="list-hero-title">Grow with every school day</h2>
-        <p className="list-hero-body">
-          Check in, finish missions, and climb your class challenge.
-        </p>
-      </section>
-
-      <section className="engage-hero">
-        <div className="xp-ring" style={{ ["--p" as string]: String(levelProgress) }}>
-          <div className="xp-ring-inner">
-            <p className="xp-level">Lv {level}</p>
-            <p className="xp-sub">
-              {xpIntoLevel}/{xpForNextLevel}
-            </p>
+      {/* Gamified Hero Card with Circular Level Progress */}
+      <section className="engage-hero-card mt-1">
+        <div className="engage-progress-circle" style={{ ["--p" as string]: String(levelProgress) }}>
+          <div className="engage-progress-inner">
+            <span style={{ fontSize: "11px", fontWeight: 800, color: "#38bdf8" }}>Lv {level}</span>
+            <span style={{ fontSize: "9px", opacity: 0.85, color: "#ffffff" }}>{xpIntoLevel}/{xpForNextLevel}</span>
           </div>
         </div>
         <div className="grow">
-          <p className="font-semibold text-15" style={{ margin: 0 }}>
-            {xp} XP earned
-          </p>
-          <p className="text-xs muted mt-1" style={{ marginBottom: 0 }}>
-            Keep learning · unlock badges · climb your class challenge
-          </p>
-          <div className="streak-pill mt-2">
-            {streak}-day streak
+          <div className="row" style={{ gap: 8, alignItems: "center" }}>
+            <h2 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "#ffffff" }}>
+              {xp} XP Earned
+            </h2>
+            <span className="streak-pill" style={{ background: "rgba(255, 255, 255, 0.2)", color: "#ffffff" }}>
+              🔥 {streak} days
+            </span>
           </div>
+          <p style={{ margin: "4px 0 0", fontSize: "11px", opacity: 0.9, lineHeight: 1.4, color: "#ffffff" }}>
+            Daily missions, study focus and class badges unlock higher levels!
+          </p>
         </div>
       </section>
 
-      <section className="card card-pad mt-4">
-        <div className="row" style={{ justifyContent: "space-between" }}>
+      {/* Daily Check-In Bar */}
+      <section className="card card-pad mt-3">
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <p className="font-semibold text-sm" style={{ margin: 0 }}>
-              Daily check-in
+              Daily Habit Check-in
             </p>
-            <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
-              Build momentum every school day
+            <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+              Build streak momentum every school day
             </p>
           </div>
           <button
             type="button"
             className="btn-primary"
-            style={{ width: "auto", padding: "0.55rem 0.9rem" }}
+            style={{ width: "auto", padding: "0.55rem 1rem" }}
             disabled={checkedIn}
             onClick={() => {
               void Promise.resolve(checkIn()).then((res) => {
-                if (res.ok) {
-                  // mission-checkin already marked on server checkIn
-                  setToast(res.message);
-                } else {
-                  setToast(res.message);
-                }
+                setToast(res.message);
               });
             }}
           >
-            {checkedIn ? "Done ✓" : "Check in +15"}
+            {checkedIn ? "Checked in ✓" : "+15 XP Check-in"}
           </button>
         </div>
       </section>
 
-      <h2 className="section-label">How are you feeling?</h2>
+      {/* Mood Selector Grid */}
+      <h2 className="section-label">How are you feeling today?</h2>
       <div className="mood-grid">
         {MOOD_OPTIONS.map((m) => (
           <button
@@ -171,7 +161,8 @@ export default function EngagePage() {
         ))}
       </div>
 
-      <h2 className="section-label">Today&apos;s missions</h2>
+      {/* Daily Missions */}
+      <h2 className="section-label">Today&apos;s quests</h2>
       <ul className="mission-list">
         {missions.map((m) => (
           <li key={m.id} className={m.done ? "done" : ""}>
@@ -180,7 +171,7 @@ export default function EngagePage() {
                 {m.done ? <CheckCircle2 size={16} /> : null}
               </div>
               <div className="grow">
-                <p className="font-medium text-sm" style={{ margin: 0 }}>
+                <p className="font-semibold text-sm" style={{ margin: 0 }}>
                   {m.title}
                 </p>
                 <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
@@ -193,27 +184,28 @@ export default function EngagePage() {
         ))}
       </ul>
 
-      <h2 className="section-label">Focus timer</h2>
+      {/* 5-Minute Focus Study Timer */}
+      <h2 className="section-label">Study focus timer</h2>
       <section className="card card-pad">
-        <div className="row" style={{ justifyContent: "space-between", gap: 12 }}>
+        <div className="row" style={{ justifyContent: "space-between", gap: 12, alignItems: "center" }}>
           <div>
             <p className="font-semibold text-sm" style={{ margin: 0 }}>
-              5-minute study burst
+              5-minute focus session
             </p>
-            <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
-              Total focused: {focusMinutes} min
+            <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+              Total focused this term: {focusMinutes} min
             </p>
           </div>
           <button
             type="button"
             className="btn-primary"
-            style={{ width: "auto", padding: "0.55rem 0.9rem" }}
+            style={{ width: "auto", padding: "0.55rem 1rem" }}
             disabled={focusLeft > 0}
             onClick={() => setFocusLeft(5 * 60)}
           >
             {focusLeft > 0
               ? `${Math.floor(focusLeft / 60)}:${String(focusLeft % 60).padStart(2, "0")}`
-              : "Start"}
+              : "Start Timer"}
           </button>
         </div>
         {focusLeft > 0 && (
@@ -223,7 +215,8 @@ export default function EngagePage() {
         )}
       </section>
 
-      <h2 className="section-label">Weekly challenge</h2>
+      {/* Weekly Class Challenge */}
+      <h2 className="section-label">Weekly class challenge</h2>
       <section className="challenge-card">
         <p className="font-semibold text-15" style={{ margin: 0 }}>
           {challenge.title}
@@ -240,18 +233,19 @@ export default function EngagePage() {
         </div>
         <div className="row mt-2" style={{ justifyContent: "space-between" }}>
           <span className="text-11">
-            {challenge.progress}/{challenge.goal} actions
+            {challenge.progress}/{challenge.goal} completed
           </span>
           <span className="text-11">{challenge.endsIn} · +{challenge.rewardXp} XP</span>
         </div>
       </section>
 
-      <h2 className="section-label">Badges · {unlocked}/{badges.length}</h2>
-      <div className="badge-grid">
+      {/* Badges Collection */}
+      <h2 className="section-label">Badges collection · {unlocked}/{badges.length}</h2>
+      <div className="engage-badge-grid">
         {badges.map((b) => (
-          <div key={b.id} className={`badge-tile ${b.unlockedAt ? "on" : "off"}`}>
-            <span className="badge-emoji">{b.emoji}</span>
-            <p className="font-semibold text-11" style={{ margin: "6px 0 0" }}>
+          <div key={b.id} className={`engage-badge-tile ${b.unlockedAt ? "unlocked" : "locked"}`}>
+            <span style={{ fontSize: "24px" }}>{b.emoji}</span>
+            <p className="font-semibold text-11" style={{ margin: "6px 0 0", color: "var(--foreground)" }}>
               {b.title}
             </p>
             <p className="text-10 muted" style={{ margin: "2px 0 0" }}>
@@ -261,26 +255,28 @@ export default function EngagePage() {
         ))}
       </div>
 
-      <div className="stats-grid mt-5">
+      {/* Shortcuts */}
+      <div className="stats-grid mt-4">
         <Link href="/homework" className="stat-card">
           <div className="row" style={{ gap: 6 }}>
             <BookOpen size={16} className="tone-info" />
             <span className="text-xs muted">Homework</span>
           </div>
-          <p className="stat-value">Go</p>
-          <p className="text-11 muted mt-1">Earn XP by finishing tasks</p>
+          <p className="stat-value">Tasks</p>
+          <p className="text-11 muted mt-1">Earn XP by finishing assignments</p>
         </Link>
         <Link href="/chats" className="stat-card">
           <div className="row" style={{ gap: 6 }}>
             <MessageCircle size={16} className="tone-primary" />
             <span className="text-xs muted">Chats</span>
           </div>
-          <p className="stat-value">Join</p>
-          <p className="text-11 muted mt-1">React & stay in class loop</p>
+          <p className="stat-value">Discuss</p>
+          <p className="text-11 muted mt-1">Engage with teachers & class</p>
         </Link>
       </div>
 
-      <Link href="/ai" className="ai-banner mt-4">
+      {/* AI Buddy Banner */}
+      <Link href="/ai" className="ai-banner mt-3">
         <div className="ai-banner-inner">
           <div className="ai-icon">
             <Sparkles size={20} />
@@ -288,7 +284,7 @@ export default function EngagePage() {
           <div className="grow">
             <p className="font-semibold text-15">Study buddy AI</p>
             <p className="text-xs" style={{ opacity: 0.85, marginTop: 2 }}>
-              Ask for a quick revision tip
+              Ask questions, get homework tips & exam revisions
             </p>
           </div>
           <ArrowRight size={20} />

@@ -49,28 +49,20 @@ export default function NotificationsPage() {
       title="Notifications"
       subtitle={
         unreadNotifications > 0
-          ? `${unreadNotifications} unread`
-          : "You're all caught up"
+          ? `${unreadNotifications} unread alerts`
+          : "All caught up"
       }
       headerAccent="plain"
     >
-      <section className="list-hero list-hero-blue">
-        <p className="list-hero-kicker">Alerts</p>
-        <h2 className="list-hero-title">School notifications</h2>
-        <p className="list-hero-body">
-          Circulars, homework, bus and class updates in one inbox.
-        </p>
-      </section>
-
-      <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
-        <p className="text-xs muted" style={{ margin: 0 }}>
-          Tap any item to open the related screen
+      <div className="row mt-2" style={{ justifyContent: "space-between", alignItems: "center" }}>
+        <p className="text-11 muted" style={{ margin: 0 }}>
+          Direct deep-links to academic and campus events
         </p>
         {unreadNotifications > 0 && (
           <button
             type="button"
             className="text-xs font-semibold tone-primary row"
-            style={{ gap: 4 }}
+            style={{ gap: 4, background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}
             onClick={() => markAllNotificationsRead()}
           >
             <CheckCheck size={14} /> Mark all read
@@ -83,42 +75,42 @@ export default function NotificationsPage() {
           icon={Bell}
           tone="blue"
           title="No notifications yet"
-          body="School circulars and class updates will appear here."
+          body="School circulars, bus alerts and class notices will appear here."
         />
       ) : (
-        <ul className="notif-list">
+        <ul className="notif-list-card">
           {notifications.map((n) => {
             const Icon = iconFor[n.type] || Bell;
             return (
-              <li key={n.id} className={n.read ? "read" : "unread"}>
+              <li key={n.id}>
                 <Link
                   href={n.href || "/"}
-                  className="notif-row"
+                  className={`notif-item ${!n.read ? "unread" : ""}`}
                   onClick={() => markNotificationRead(n.id)}
                 >
                   <div className={`notif-icon type-${n.type}`}>
-                    <Icon size={16} />
+                    <Icon size={17} />
                   </div>
-                  <div className="grow">
+                  <div className="grow" style={{ minWidth: 0 }}>
                     <div
                       className="row"
                       style={{ justifyContent: "space-between", gap: 8 }}
                     >
                       <p
-                        className="font-semibold text-sm truncate"
-                        style={{ margin: 0 }}
+                        className="font-semibold text-14 truncate"
+                        style={{ margin: 0, color: "var(--foreground)" }}
                       >
                         {n.title}
                       </p>
-                      <span className="text-10 muted">
+                      <span className="text-10 muted" style={{ flexShrink: 0 }}>
                         {formatChatTime(n.createdAt)}
                       </span>
                     </div>
-                    <p className="text-xs muted" style={{ margin: "2px 0 0" }}>
+                    <p className="text-xs muted truncate" style={{ margin: "3px 0 0" }}>
                       {n.body}
                     </p>
                   </div>
-                  {!n.read ? <span className="unread-dot" /> : null}
+                  {!n.read && <span className="unread-dot" />}
                 </Link>
               </li>
             );

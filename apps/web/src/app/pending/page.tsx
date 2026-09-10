@@ -174,6 +174,32 @@ export default function PendingAccessPage() {
               : "Your join request was sent to the school admin. Full features unlock after they approve you in Admin → Users (or when you register with a valid invite code)."}
           </p>
 
+          <div className="pending-timeline">
+            <div className="pending-timeline-step">
+              <div className="pending-timeline-dot done">✓</div>
+              <div>
+                <strong style={{ display: "block", color: "var(--foreground)" }}>Step 1: Account Created</strong>
+                <span className="muted" style={{ fontSize: 11 }}>Signed in as {user.identifier}</span>
+              </div>
+            </div>
+            <div className="pending-timeline-step">
+              <div className="pending-timeline-dot active">2</div>
+              <div>
+                <strong style={{ display: "block", color: "var(--primary)" }}>Step 2: Admin Approval Pending</strong>
+                <span className="muted" style={{ fontSize: 11 }}>
+                  {user.role === "student" ? "Waiting for teacher/admin enrollment check" : "Awaiting school admin verification"}
+                </span>
+              </div>
+            </div>
+            <div className="pending-timeline-step">
+              <div className="pending-timeline-dot waiting">3</div>
+              <div>
+                <strong style={{ display: "block", color: "var(--slate)" }}>Step 3: Features Activation</strong>
+                <span className="muted" style={{ fontSize: 11 }}>Home, chats, homework & bus tracking unlock automatically</span>
+              </div>
+            </div>
+          </div>
+
           <div className="pending-meta mt-3">
             <p className="text-11 muted" style={{ margin: 0 }}>
               Name
@@ -203,11 +229,9 @@ export default function PendingAccessPage() {
             )}
           </div>
 
-          <p className="text-11 muted mt-3" style={{ marginBottom: 0 }}>
-            {user.role === "student"
-              ? "Ask your class teacher or school admin to open Admin → Enroll or Class desk and approve you."
-              : "Ask school admin to open Admin → Users and tap Approve access."}{" "}
-            This page refreshes automatically.
+          <p className="text-11 muted mt-3" style={{ marginBottom: 0, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--primary)", display: "inline-block", animation: "pulse 1.4s infinite" }} />
+            Checking status automatically every 4s. Tap below if you just got approved.
           </p>
 
           <div className="row mt-3" style={{ gap: 8 }}>

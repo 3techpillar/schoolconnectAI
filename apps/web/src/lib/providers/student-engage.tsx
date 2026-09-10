@@ -49,6 +49,15 @@ interface EngageState {
   celebrateUntil: number;
 }
 
+interface RemoteActionResult {
+  ok: boolean;
+  engage: EngageState;
+  actionOk?: boolean;
+  message?: string;
+  xpGained?: number;
+  error?: unknown;
+}
+
 interface EngageCtx extends EngageState {
   ready: boolean;
   level: number;
@@ -151,27 +160,41 @@ export function StudentEngageProvider({ children }: { children: ReactNode }) {
   }, [authReady, backend, user?.id, user?.schoolId]);
 
   const runRemoteAction = useCallback(
-    async (payload: Record<string, unknown>) => {
-      const res = await apiFetch<{
-        engage: EngageState;
-        ok?: boolean;
-        message?: string;
-        xpGained?: number;
-      }>("/api/engage", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      setState({
-        ...res.engage,
-        badges: res.engage.badges?.length ? res.engage.badges : DEFAULT_BADGES,
-        missions: res.engage.missions?.length
-          ? res.engage.missions
-          : defaultMissions(),
-        challenge: res.engage.challenge?.id
-          ? res.engage.challenge
-          : defaultChallenge(),
-      });
-      return res;
+    async (payload: Record<string, unknown>): Promise<RemoteActionResult> => {
+      try {
+        const res = await apiFetch<{
+          engage: EngageState;
+          actionOk?: boolean;
+          ok?: boolean;
+          message?: string;
+          xpGained?: number;
+        }>("/api/engage", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        if (res.engage) {
+          setState({
+            ...res.engage,
+            badges: res.engage.badges?.length ? res.engage.badges : DEFAULT_BADGES,
+            missions: res.engage.missions?.length
+              ? res.engage.missions
+              : defaultMissions(),
+            challenge: res.engage.challenge?.id
+              ? res.engage.challenge
+              : defaultChallenge(),
+          });
+        }
+        return res;
+      } catch (err) {
+        return {
+          ok: false,
+          engage: defaultState(),
+          error: err,
+          actionOk: false,
+          xpGained: 0,
+          message: err instanceof Error ? err.message : "Request failed",
+        };
+      }
     },
     [],
   );
@@ -205,7 +228,7 @@ export function StudentEngageProvider({ children }: { children: ReactNode }) {
     if (backendRef.current) {
       return runRemoteAction({ action: "checkIn" })
         .then((res) => ({
-          ok: Boolean(res.ok),
+          ok: Boolean(res.actionOk ?? res.ok),
           xp: res.xpGained || 0,
           message: res.message || "Checked in",
         }))

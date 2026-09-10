@@ -13,7 +13,15 @@ import {
 } from "@/lib/providers/school-data";
 import { useStudentEngage, REACTION_EMOJIS } from "@/lib/providers/student-engage";
 import { addDaysIso, toIsoDate } from "@/lib/shared/dates";
-import { ArrowLeft, Send, BookOpen, CalendarCheck, Sparkles, MessageCircle } from "@/components/shell/Icons";
+import {
+  ArrowLeft,
+  Send,
+  BookOpen,
+  CalendarCheck,
+  CheckCheck,
+  Sparkles,
+  MessageCircle,
+} from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 
 export default function ChatThreadPage() {
@@ -113,7 +121,7 @@ export default function ChatThreadPage() {
         </Link>
       }
     >
-      <div className="wa-thread">
+      <div className="wa-thread-canvas">
         {messages.length === 0 && (
           <EmptyState
             icon={MessageCircle}
@@ -128,7 +136,7 @@ export default function ChatThreadPage() {
           return (
             <div key={m.id} className={`wa-bubble-row ${mine ? "mine" : "theirs"}`}>
               <div
-                className={`wa-bubble ${mine ? "mine" : "theirs"} kind-${m.kind}${m.pending ? " pending" : ""}${m.failed ? " failed" : ""}`}
+                className={`wa-bubble-enhanced ${mine ? "mine" : "theirs"} kind-${m.kind}${m.pending ? " pending" : ""}${m.failed ? " failed" : ""}`}
               >
                 {!mine && (
                   <p className="wa-sender">
@@ -202,7 +210,11 @@ export default function ChatThreadPage() {
                   {formatChatTime(m.createdAt)}
                   {mine && m.pending ? " · Sending…" : ""}
                   {mine && m.failed ? " · Failed" : ""}
-                  {mine && !m.pending && !m.failed && readCount > 0 ? " · Read" : ""}
+                  {mine && !m.pending && !m.failed && (
+                    <span className="wa-read-status" style={{ marginLeft: 4 }}>
+                      <CheckCheck size={13} />
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -235,7 +247,8 @@ export default function ChatThreadPage() {
         </p>
       )}
 
-      <form className="wa-composer" onSubmit={onSend}>
+      {/* Floating Glassmorphic Composer */}
+      <form className="wa-composer-capsule" onSubmit={onSend}>
         {teacher && (
           <div className="wa-post-tools">
             {(
@@ -280,7 +293,7 @@ export default function ChatThreadPage() {
           </div>
         )}
 
-        <div className="wa-input-row">
+        <div className="wa-input-pill">
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
@@ -297,16 +310,16 @@ export default function ChatThreadPage() {
           />
           <button
             type="submit"
-            className="send-btn"
+            className="wa-send-btn"
             aria-label="Send"
             disabled={!text.trim() || sending}
           >
-            <Send size={16} />
+            <Send size={15} />
           </button>
         </div>
         {teacher && (
-          <p className="text-10 muted" style={{ margin: "6px 4px 0" }}>
-            Posting as teacher — parents in this chat will get a notification.
+          <p className="text-10 muted" style={{ margin: "5px 4px 0" }}>
+            Posting as class teacher — parents will receive an instant notification.
           </p>
         )}
       </form>

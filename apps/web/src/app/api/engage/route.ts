@@ -26,7 +26,7 @@ async function postHandler(req: Request) {
   const result = await applyEngageAction(String(user._id), parsed.data);
   return jsonOk({
     engage: result.engage,
-    ok: result.ok,
+    actionOk: result.ok,
     message: result.message,
     xpGained: result.xpGained,
   });

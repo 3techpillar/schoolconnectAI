@@ -68,10 +68,11 @@ export function createApiClient(options: CreateApiClientOptions = {}) {
     }
 
     if (!res.ok || body.ok === false) {
-      throw new ApiError(
-        body.error || `Request failed (${res.status})`,
-        res.status,
-      );
+      const msg =
+        body.error ||
+        (body as { message?: string }).message ||
+        `Request failed (${res.status})`;
+      throw new ApiError(msg, res.status);
     }
 
     return body as ApiResult<T>;

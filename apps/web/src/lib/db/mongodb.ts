@@ -1,4 +1,11 @@
+import dns from "dns";
 import mongoose from "mongoose";
+
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch {
+  /* ignore if unsupported in environment */
+}
 
 const globalForMongo = globalThis as unknown as {
   mongoosePromise?: Promise<typeof mongoose>;

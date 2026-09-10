@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/providers/auth";
 import { useSchoolData } from "@/lib/providers/school-data";
 import { useTeacherClass, formatRelative } from "@/lib/providers/teacher-class";
 import { canBroadcastNotification } from "@/lib/shared/roles";
-import { Bookmark, CheckCheck, Plus, Megaphone } from "@/components/shell/Icons";
+import { Bookmark, CheckCheck, Plus, Megaphone, CalendarCheck } from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 
 export default function CircularsPage() {
@@ -83,16 +83,9 @@ export default function CircularsPage() {
 
   return (
     <PhoneShell subtitle="School updates" title="Circulars" headerAccent="plain">
-      <section className="list-hero list-hero-blue">
-        <p className="list-hero-kicker">Announcements</p>
-        <h2 className="list-hero-title">Circulars &amp; notices</h2>
-        <p className="list-hero-body">
-          Official school updates — save what matters for later.
-        </p>
-      </section>
-
-      <div className="row" style={{ gap: 8, alignItems: "center" }}>
-        <div className="chip-row" style={{ flex: 1 }}>
+      {/* Category filter pills & new circular trigger */}
+      <div className="row mt-2" style={{ gap: 8, alignItems: "center" }}>
+        <div className="chip-row" style={{ flex: 1, paddingBottom: 2 }}>
           {filters.map((t) => (
             <button
               key={t}
@@ -107,7 +100,13 @@ export default function CircularsPage() {
         {canPublish && (
           <button
             type="button"
-            className="icon-btn muted"
+            className="icon-btn"
+            style={{
+              background: showForm ? "var(--blue-tint)" : "var(--surface)",
+              border: "1px solid var(--border)",
+              color: "var(--primary)",
+              flexShrink: 0,
+            }}
             aria-label="New announcement"
             onClick={() => setShowForm((v) => !v)}
           >
@@ -116,11 +115,15 @@ export default function CircularsPage() {
         )}
       </div>
 
+      {/* Publisher Drawer Form */}
       {canPublish && showForm && (
-        <form className="card card-pad mt-3 space-y" onSubmit={onPublish}>
-          <p className="font-semibold text-sm" style={{ margin: 0 }}>
-            Publish announcement
-          </p>
+        <form className="card card-pad mt-3 space-y" onSubmit={onPublish} style={{ borderColor: "rgba(37, 99, 235, 0.3)" }}>
+          <div className="row" style={{ justifyContent: "space-between" }}>
+            <p className="font-semibold text-sm" style={{ margin: 0 }}>
+              Broadcast Announcement
+            </p>
+            <span className="text-10 muted">Class & Parent notice</span>
+          </div>
           <select
             className="wa-select"
             value={tag}
@@ -136,7 +139,7 @@ export default function CircularsPage() {
             className="input"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Title"
+            placeholder="Announcement Title"
             required
           />
           <textarea
@@ -144,7 +147,7 @@ export default function CircularsPage() {
             style={{ minHeight: 90, resize: "vertical" }}
             value={body}
             onChange={(e) => setBody(e.target.value)}
-            placeholder="Message for parents"
+            placeholder="Official details for students and parents…"
             required
           />
           {error && (
@@ -153,11 +156,12 @@ export default function CircularsPage() {
             </p>
           )}
           <button type="submit" className="btn-primary" disabled={publishing}>
-            {publishing ? "Publishing…" : "Publish to class"}
+            {publishing ? "Publishing…" : "Broadcast to School"}
           </button>
         </form>
       )}
 
+      {/* Circular Cards */}
       {filtered.length === 0 ? (
         <EmptyState
           icon={Megaphone}
@@ -174,72 +178,65 @@ export default function CircularsPage() {
           body="When the school publishes a notice, it will show up here."
         />
       ) : (
-        <ul className="feed mt-4">
-          {filtered.map((c) => (
-            <li
-              key={c.id}
-              className="relative"
-              style={{
-                flexDirection: "column",
-                alignItems: "stretch",
-                cursor: "pointer",
-              }}
-              onClick={() => {
-                if (c.unread) markCircularRead(c.id);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && c.unread) markCircularRead(c.id);
-              }}
-              role="button"
-              tabIndex={0}
-            >
-              {c.unread && (
-                <span
-                  style={{
-                    position: "absolute",
-                    top: 16,
-                    right: 16,
-                    width: 8,
-                    height: 8,
-                    borderRadius: 999,
-                    background: "var(--primary)",
-                  }}
-                />
-              )}
-              <div className="row text-10 font-semibold" style={{ gap: 8 }}>
-                <span className="badge badge-secondary">{c.tag}</span>
-                <span className="muted font-medium">{formatRelative(c.createdAt)}</span>
-                {!c.unread && (
-                  <span className="muted row" style={{ marginLeft: "auto", gap: 2 }}>
-                    <CheckCheck size={14} /> Read
-                  </span>
-                )}
-              </div>
-              <p className="font-medium text-15 mt-2" style={{ paddingRight: 24 }}>
-                {c.title}
-              </p>
-              <p className="text-sm muted mt-1">{c.body}</p>
-              <div className="row mt-2" style={{ justifyContent: "space-between" }}>
-                <span className="text-11 muted">By {c.postedBy}</span>
-                <button
-                  type="button"
-                  className={`icon-btn muted circular-save ${savedIds.includes(c.id) ? "is-saved" : ""}`}
-                  aria-label={savedIds.includes(c.id) ? "Unsave circular" : "Save circular"}
-                  style={{ width: 36, height: 36 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSavedIds((prev) =>
-                      prev.includes(c.id)
-                        ? prev.filter((id) => id !== c.id)
-                        : [...prev, c.id],
-                    );
-                  }}
-                >
-                  <Bookmark size={16} />
-                </button>
-              </div>
-            </li>
-          ))}
+        <ul className="circular-list-container">
+          {filtered.map((c) => {
+            const isSaved = savedIds.includes(c.id);
+            return (
+              <li
+                key={c.id}
+                className={`circular-card ${c.unread ? "unread" : ""}`}
+                onClick={() => {
+                  if (c.unread) markCircularRead(c.id);
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+                  <div className="row" style={{ gap: 6, alignItems: "center" }}>
+                    <span className={`circular-tag tag-${c.tag.toLowerCase()}`}>
+                      {c.tag}
+                    </span>
+                    <span className="text-11 muted row" style={{ gap: 4 }}>
+                      <CalendarCheck size={12} /> {formatRelative(c.createdAt)}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className={`circular-save-btn ${isSaved ? "is-saved" : ""}`}
+                    aria-label={isSaved ? "Unsave circular" : "Save circular"}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSavedIds((prev) =>
+                        prev.includes(c.id)
+                          ? prev.filter((id) => id !== c.id)
+                          : [...prev, c.id],
+                      );
+                    }}
+                  >
+                    <Bookmark size={15} />
+                  </button>
+                </div>
+
+                <h3 className="font-semibold text-15 mt-2" style={{ margin: "0.5rem 0 0.25rem", color: "var(--foreground)" }}>
+                  {c.title}
+                </h3>
+
+                <p className="text-xs muted" style={{ margin: "0 0 0.75rem", lineHeight: 1.5 }}>
+                  {c.body}
+                </p>
+
+                <div className="row" style={{ justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" }}>
+                  <span className="text-11 muted">Posted by <strong>{c.postedBy}</strong></span>
+                  {!c.unread && (
+                    <span className="text-11 muted row" style={{ gap: 4 }}>
+                      <CheckCheck size={14} style={{ color: "#10b981" }} /> Acknowledged
+                    </span>
+                  )}
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </PhoneShell>

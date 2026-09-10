@@ -171,6 +171,15 @@ export function PhoneShell({
                         : "Notifications"
                     }
                     className={`icon-btn relative ${isPrimary ? "on-primary" : "muted"}${unreadNotifications > 0 ? " has-alert" : ""}`}
+                    style={{
+                      background: isPrimary
+                        ? "rgba(255, 255, 255, 0.18)"
+                        : "var(--surface)",
+                      border: isPrimary
+                        ? "1px solid rgba(255, 255, 255, 0.25)"
+                        : "1px solid var(--border)",
+                      backdropFilter: "blur(8px)",
+                    }}
                   >
                     <Bell size={18} />
                     {unreadNotifications > 0 && <span className="dot-warn" />}
@@ -180,7 +189,20 @@ export function PhoneShell({
                     aria-label="Profile"
                     title={user.name}
                     className={`icon-btn ${isPrimary ? "on-primary" : "muted"}`}
-                    style={{ fontSize: 12, fontWeight: 800 }}
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 800,
+                      background: isPrimary
+                        ? "rgba(255, 255, 255, 0.25)"
+                        : "linear-gradient(135deg, #dbeafe, #eff6ff)",
+                      color: isPrimary ? "#ffffff" : "var(--primary)",
+                      border: isPrimary
+                        ? "1.5px solid rgba(255, 255, 255, 0.4)"
+                        : "1.5px solid rgba(37, 99, 235, 0.25)",
+                      boxShadow: isPrimary
+                        ? "0 2px 8px rgba(0, 0, 0, 0.1)"
+                        : "0 2px 6px rgba(37, 99, 235, 0.12)",
+                    }}
                   >
                     {(user.name || "?").charAt(0).toUpperCase()}
                   </Link>

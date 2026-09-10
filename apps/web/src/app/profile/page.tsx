@@ -12,7 +12,7 @@ import {
 } from "@/lib/providers/leaves";
 import { useBusTrack } from "@/lib/providers/bus-track";
 import { toIsoDate } from "@/lib/shared/dates";
-import { Bus, CalendarCheck, LogOut, ShieldCheck } from "@/components/shell/Icons";
+import { Bus, CalendarCheck, FileText, LogOut, ShieldCheck } from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 import { ParentLinksPanel } from "@/components/ParentLinksPanel";
 
@@ -124,26 +124,55 @@ export default function ProfilePage() {
 
   return (
     <PhoneShell subtitle={ROLE_LABEL[user.role]} title="Profile">
-      <section className="card card-pad row">
-        <div className="avatar">{user.name.charAt(0).toUpperCase()}</div>
-        <div className="grow">
-          <p className="font-semibold text-15" style={{ margin: 0 }}>
-            {user.name}
-          </p>
-          <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
-            {user.identifier} · role locked: {ROLE_LABEL[user.role]}
-          </p>
+      {/* Profile Hero Card */}
+      <section className="profile-hero-card">
+        <div className="row" style={{ alignItems: "center", gap: 14 }}>
+          <div className="profile-avatar-large">
+            {user.name.charAt(0).toUpperCase()}
+          </div>
+          <div className="grow">
+            <div className="row" style={{ gap: 8, alignItems: "center" }}>
+              <h2 className="font-semibold text-15" style={{ margin: 0 }}>
+                {user.name}
+              </h2>
+              <span className="profile-role-badge">
+                {ROLE_LABEL[user.role]}
+              </span>
+            </div>
+            <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
+              {user.identifier} · {user.school}
+            </p>
+          </div>
+        </div>
+
+        {/* Quick Portal Shortcuts */}
+        <div className="profile-quick-actions">
+          <Link href="/bus" className="profile-quick-btn">
+            <Bus size={18} className="tone-primary" />
+            <span>Live Bus</span>
+          </Link>
+          <Link href="/attendance" className="profile-quick-btn">
+            <CalendarCheck size={18} className="tone-success" />
+            <span>Attendance</span>
+          </Link>
+          <Link href="/report" className="profile-quick-btn">
+            <FileText size={18} className="tone-info" />
+            <span>Report</span>
+          </Link>
         </div>
       </section>
 
+      {/* Account Details Form */}
       <form className="card card-pad mt-3 space-y" onSubmit={saveAccount}>
-        <p className="font-semibold text-sm" style={{ margin: 0 }}>
-          Maintain account
-        </p>
-        <p className="text-11 muted" style={{ margin: 0 }}>
-          Edits are saved to your phone/email profile and restored on next login.
-          Role cannot be changed here.
-        </p>
+        <div>
+          <p className="font-semibold text-sm" style={{ margin: 0 }}>
+            Account & Preferences
+          </p>
+          <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+            Profile details are saved to your account and persist across logins.
+          </p>
+        </div>
+
         <label>
           <span className="text-xs font-medium muted">Full name</span>
           <input
@@ -184,33 +213,54 @@ export default function ProfilePage() {
         )}
 
         {user.role === "parent" && (
-          <fieldset style={{ border: 0, margin: 0, padding: 0 }}>
-            <p className="text-xs font-medium muted" style={{ margin: "0 0 8px" }}>
-              How you use the app
-            </p>
-            <label className="row" style={{ gap: 8, alignItems: "flex-start" }}>
-              <input
-                type="radio"
-                name="parentAccess"
-                checked={parentAccess === "guardian"}
-                onChange={() => setParentAccess("guardian")}
-              />
-              <span className="text-xs">
-                <strong>Guardian view</strong> — attendance, report and progress stay on top. Same chats, homework and Learning Zone as your child.
-              </span>
-            </label>
-            <label className="row mt-2" style={{ gap: 8, alignItems: "flex-start" }}>
-              <input
-                type="radio"
-                name="parentAccess"
-                checked={parentAccess === "student"}
-                onChange={() => setParentAccess("student")}
-              />
-              <span className="text-xs">
-                <strong>Student view</strong> — same home as the student account (Zone first). Use this if you only want to follow the child app.
-              </span>
-            </label>
-          </fieldset>
+          <div style={{ marginTop: "1rem" }}>
+            <span className="text-xs font-medium muted" style={{ display: "block", marginBottom: 8 }}>
+              Navigation experience
+            </span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div
+                className={`access-radio-card ${parentAccess === "guardian" ? "active" : ""}`}
+                onClick={() => setParentAccess("guardian")}
+              >
+                <input
+                  type="radio"
+                  name="parentAccess"
+                  checked={parentAccess === "guardian"}
+                  onChange={() => setParentAccess("guardian")}
+                  style={{ marginTop: 2 }}
+                />
+                <div className="grow">
+                  <strong className="text-xs" style={{ display: "block" }}>
+                    Guardian View (Recommended)
+                  </strong>
+                  <span className="text-11 muted">
+                    Attendance overview, report card and live bus on top. Same chats and Learning Zone as your child.
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={`access-radio-card ${parentAccess === "student" ? "active" : ""}`}
+                onClick={() => setParentAccess("student")}
+              >
+                <input
+                  type="radio"
+                  name="parentAccess"
+                  checked={parentAccess === "student"}
+                  onChange={() => setParentAccess("student")}
+                  style={{ marginTop: 2 }}
+                />
+                <div className="grow">
+                  <strong className="text-xs" style={{ display: "block" }}>
+                    Student View
+                  </strong>
+                  <span className="text-11 muted">
+                    Learning Zone, quests and daily XP prioritized on the home screen.
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         <div className="bus-pref-box">
@@ -231,7 +281,7 @@ export default function ProfilePage() {
               ))}
             </select>
           </label>
-          <label className="row mt-2" style={{ gap: 8 }}>
+          <label className="row mt-2" style={{ gap: 8, cursor: "pointer" }}>
             <input
               type="checkbox"
               checked={alert10}
@@ -239,7 +289,7 @@ export default function ProfilePage() {
             />
             <span className="text-xs">Alert when bus is ~10 min away</span>
           </label>
-          <label className="row mt-1" style={{ gap: 8 }}>
+          <label className="row mt-1" style={{ gap: 8, cursor: "pointer" }}>
             <input
               type="checkbox"
               checked={alert5}
@@ -273,27 +323,16 @@ export default function ProfilePage() {
         />
       )}
 
-      <div className="row mt-3" style={{ gap: 8 }}>
-        <Link href="/bus" className="btn-secondary grow">
-          Open live bus map
-        </Link>
-        <Link href="/attendance" className="btn-secondary grow">
-          Attendance
-        </Link>
-        <Link href="/report" className="btn-secondary grow">
-          Report
-        </Link>
-      </div>
-
       {canApply && (
         <form className="card card-pad mt-4 space-y" onSubmit={onApply}>
-          <p className="font-semibold text-sm" style={{ margin: 0 }}>
-            Apply for leave
-          </p>
-          <p className="text-11 muted" style={{ margin: 0 }}>
-            Approved leave marks those days as Leave (L) on the attendance
-            calendar.
-          </p>
+          <div>
+            <p className="font-semibold text-sm" style={{ margin: 0 }}>
+              Apply for leave
+            </p>
+            <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+              Approved leave automatically marks those dates as Leave (L) on the attendance record.
+            </p>
+          </div>
           {(user.role === "parent" || user.role === "class_teacher") && (
             <label>
               <span className="text-xs font-medium muted">Student name</span>
@@ -307,7 +346,7 @@ export default function ProfilePage() {
           )}
           <div className="wa-meta-row">
             <label className="grow">
-              <span className="text-xs font-medium muted">From</span>
+              <span className="text-xs font-medium muted">From date</span>
               <input
                 type="date"
                 className="input"
@@ -317,7 +356,7 @@ export default function ProfilePage() {
               />
             </label>
             <label className="grow">
-              <span className="text-xs font-medium muted">To</span>
+              <span className="text-xs font-medium muted">To date</span>
               <input
                 type="date"
                 className="input"
@@ -329,12 +368,12 @@ export default function ProfilePage() {
             </label>
           </div>
           <label>
-            <span className="text-xs font-medium muted">Reason</span>
+            <span className="text-xs font-medium muted">Reason for leave</span>
             <input
               className="input"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Medical / family / travel"
+              placeholder="Medical illness / family function / travel"
               required
             />
           </label>
@@ -394,7 +433,7 @@ export default function ProfilePage() {
       <button
         type="button"
         className="btn-secondary mt-4 row"
-        style={{ gap: 8, justifyContent: "center", width: "100%" }}
+        style={{ gap: 8, justifyContent: "center", width: "100%", borderColor: "rgba(239, 68, 68, 0.3)", color: "var(--destructive)" }}
         onClick={() => {
           logout();
           router.replace("/auth");
