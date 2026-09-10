@@ -169,7 +169,7 @@ export async function syncClassDeskRosterFromProfile(
   };
 
   // Pipeline update: filter old rows for this student, append entry, sort by roll
-  await ClassDesk.updateOne({ schoolId, className }, [
+  await ClassDesk.collection.updateOne({ schoolId, className }, [
     {
       $set: {
         roster: {
