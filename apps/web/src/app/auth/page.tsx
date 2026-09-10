@@ -18,12 +18,55 @@ import {
   GraduationCap,
   Sparkles,
   ShieldCheck,
+  BookOpen,
+  Bus,
+  School,
+  CheckCircle2,
 } from "@/components/shell/Icons";
 
 type Step = "welcome" | "identifier" | "otp" | "profile";
 type Channel = "email" | "phone";
 
 const ROLES = SIGNUP_ROLES;
+
+const QUICK_DEMO_USERS = [
+  { role: "super_admin", label: "Super Admin", sub: "Platform owner", email: "super@schoolconnect.demo", badge: "👑 Platform" },
+  { role: "admin", label: "Radoms Admin", sub: "Full ERP mode", email: "admin@radoms.demo", badge: "🏢 ERP" },
+  { role: "class_teacher", label: "Ms. Mehta", sub: "Class 6-B teacher", email: "teacher@radoms.demo", badge: "👩‍🏫 Teacher" },
+  { role: "parent", label: "RIS Parent", sub: "Ishaan's parent", email: "parent@radoms.demo", badge: "👨‍👩‍👦 Parent" },
+  { role: "student", label: "Ishaan Gupta", sub: "Student (6-B)", email: "student@radoms.demo", badge: "🎓 Student" },
+  { role: "bus_attendant", label: "Bus Attendant", sub: "Route-12 Driver", email: "bus@radoms.demo", badge: "🚌 Bus" },
+  { role: "admin", label: "Noida Admin", sub: "Radmos Group", email: "admin.noida@radmos.demo", badge: "📍 Noida" },
+  { role: "admin", label: "Lucknow Admin", sub: "Transfers desk", email: "admin.lucknow@radmos.demo", badge: "📍 Lucknow" },
+];
+
+const ROLE_INFO: Record<string, { label: string; desc: string; icon: typeof GraduationCap }> = {
+  parent: {
+    label: "Parent / Guardian",
+    desc: "View attendance, pay school fees & live bus alerts",
+    icon: ShieldCheck,
+  },
+  student: {
+    label: "Student",
+    desc: "Access daily homework, timetables & Learning Zone XP",
+    icon: GraduationCap,
+  },
+  class_teacher: {
+    label: "Class Teacher",
+    desc: "Take roll call attendance, assign homework & chat",
+    icon: BookOpen,
+  },
+  bus_attendant: {
+    label: "Bus Attendant",
+    desc: "Live route tracking & parent arrival alerts",
+    icon: Bus,
+  },
+  principal: {
+    label: "Principal / Leadership",
+    desc: "School leadership & administrative approvals",
+    icon: School,
+  },
+};
 
 export default function AuthPage() {
   return (
@@ -400,129 +443,187 @@ function AuthPageInner() {
               <WelcomeHints />
 
               {appConfig.demoMode && (
-              <div className="demo-note" style={{ flexDirection: "column", alignItems: "stretch", gap: 8 }}>
-                <p className="text-xs" style={{ margin: 0 }}>
-                  <ShieldCheck size={16} className="tone-primary" /> Test mode — OTP{" "}
-                  <strong>{appConfig.demoOtp}</strong>
-                </p>
-                <p className="text-11 muted" style={{ margin: 0 }}>Web admin</p>
-                <div className="role-grid">
-                  {DEMO_ADMIN_ACCOUNTS.map((acc) => (
-                    <button
-                      type="button"
-                      key={acc.identifier}
-                      className={`role-btn ${identifier === acc.identifier ? "active" : ""}`}
-                      onClick={() => {
-                        setChannel("email");
-                        setIdentifier(acc.identifier);
-                      }}
-                    >
-                      {acc.role === "super_admin" ? "Super" : acc.school.split("—")[0].trim().slice(0, 22)}
-                    </button>
-                  ))}
+                <div className="auth-demo-dock" style={{ marginTop: "1.25rem" }}>
+                  <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+                    <span className="auth-demo-tag">
+                      <ShieldCheck size={13} /> Quick Test Logins
+                    </span>
+                    <span className="text-11 muted">OTP: <strong>{appConfig.demoOtp}</strong></span>
+                  </div>
+                  <p className="text-11 muted" style={{ margin: "0 0 0.6rem" }}>
+                    Tap any persona to auto-fill their credentials:
+                  </p>
+                  <div className="auth-demo-grid">
+                    {QUICK_DEMO_USERS.map((demo) => {
+                      const active = identifier === demo.email;
+                      return (
+                        <button
+                          type="button"
+                          key={demo.email}
+                          className={`auth-demo-btn ${active ? "active" : ""}`}
+                          onClick={() => {
+                            setChannel("email");
+                            setIdentifier(demo.email);
+                            setError(null);
+                          }}
+                        >
+                          <span style={{ fontSize: 13, flexShrink: 0 }}>{demo.badge.split(" ")[0]}</span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {demo.label}
+                            </div>
+                            <div style={{ fontSize: 10, color: "var(--muted-fg)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {demo.sub}
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <p className="text-11 muted" style={{ margin: 0 }}>Family (also on mobile)</p>
-                <div className="role-grid">
-                  {DEMO_FAMILY_ACCOUNTS.filter((a) => a.role === "parent").map((acc) => (
-                    <button
-                      type="button"
-                      key={acc.identifier}
-                      className={`role-btn ${identifier === acc.identifier ? "active" : ""}`}
-                      onClick={() => {
-                        setChannel("email");
-                        setIdentifier(acc.identifier);
-                      }}
-                    >
-                      {acc.school.split("—")[0].trim().slice(0, 22)}
-                    </button>
-                  ))}
-                </div>
-              </div>
               )}
             </form>
           )}
 
           {step === "otp" && (
-            <form onSubmit={submitOtp} className="space-y">
-              <p className="text-sm muted">
-                We sent a 6-digit code to{" "}
-                <strong style={{ color: "var(--foreground)" }}>
-                  {identifier}
-                </strong>
-                .
-              </p>
-              <input
-                type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={6}
-                autoFocus
-                autoComplete="one-time-code"
-                enterKeyHint="done"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                placeholder="000000"
-                className="auth-otp"
-                aria-label="One-time password"
-              />
+            <form onSubmit={submitOtp} className="space-y auth-card">
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: "50%",
+                    background: "var(--blue-tint)",
+                    color: "var(--primary)",
+                    display: "grid",
+                    placeItems: "center",
+                    margin: "0 auto 0.75rem",
+                  }}
+                >
+                  <ShieldCheck size={24} />
+                </div>
+                <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Verification Code</h2>
+                <p className="text-sm muted" style={{ margin: "4px 0 0" }}>
+                  Code sent to <strong style={{ color: "var(--foreground)" }}>{identifier}</strong>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setStep("identifier")}
+                  style={{ fontSize: 12, color: "var(--primary)", fontWeight: 700, marginTop: 6, display: "inline-block" }}
+                >
+                  ← Change {channel === "phone" ? "phone number" : "email"}
+                </button>
+              </div>
+
+              <div style={{ margin: "1.25rem 0" }}>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  autoFocus
+                  autoComplete="one-time-code"
+                  enterKeyHint="done"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                  placeholder="000000"
+                  className="auth-otp"
+                  aria-label="One-time password"
+                />
+              </div>
+
+              {appConfig.demoMode && (
+                <button
+                  type="button"
+                  onClick={() => setOtp(appConfig.demoOtp || "000000")}
+                  className="btn-secondary"
+                  style={{
+                    width: "100%",
+                    justifyContent: "center",
+                    gap: 6,
+                    fontSize: 12,
+                    padding: "8px 12px",
+                    background: "rgba(37, 99, 235, 0.08)",
+                    color: "var(--primary)",
+                    border: "1px dashed rgba(37, 99, 235, 0.4)",
+                  }}
+                >
+                  <Sparkles size={14} /> Quick-fill demo code (<strong>{appConfig.demoOtp}</strong>)
+                </button>
+              )}
+
               {error && <p className="error-text">{error}</p>}
+
               <button
                 type="submit"
                 disabled={loading || otp.length !== 6}
                 className="btn-primary"
+                style={{ width: "100%", padding: "12px", marginTop: "1rem" }}
               >
-                {loading ? "Verifying…" : "Verify & continue"}
+                {loading ? "Verifying…" : "Verify & Continue"}
               </button>
-              {appConfig.demoMode && (
-              <p className="text-xs muted" style={{ textAlign: "center" }}>
-                Demo OTP:{" "}
-                <strong style={{ color: "var(--foreground)" }}>
-                  {appConfig.demoOtp}
-                </strong>
-              </p>
-              )}
             </form>
           )}
 
           {step === "profile" && (
-            <form onSubmit={submitProfile} className="space-y">
+            <form onSubmit={submitProfile} className="space-y auth-card">
               <div className="row text-sm muted">
-                <GraduationCap size={16} className="tone-primary" />
-                Tell us a bit about you to set up your account.
+                <GraduationCap size={18} className="tone-primary" />
+                <span>Tell us a bit about you to complete your setup.</span>
               </div>
 
               <label>
-                <span className="text-xs font-medium muted">Full name</span>
+                <span className="text-xs font-medium muted">Your Full Name</span>
                 <input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Priya Sharma"
+                  placeholder="e.g. Priya Sharma"
                   className="input"
                 />
               </label>
 
               <div>
-                <span className="text-xs font-medium muted">I am a</span>
-                <div className="role-grid">
-                  {ROLES.map((r) => (
-                    <button
-                      type="button"
-                      key={r}
-                      onClick={() => setRole(r)}
-                      className={`role-btn ${role === r ? "active" : ""}`}
-                    >
-                      {ROLE_LABEL[r]}
-                    </button>
-                  ))}
+                <span className="text-xs font-semibold muted" style={{ display: "block", marginBottom: 8 }}>
+                  Select your role in the school:
+                </span>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {ROLES.map((r) => {
+                    const info = ROLE_INFO[r] || {
+                      label: ROLE_LABEL[r],
+                      desc: "Access school services",
+                      icon: GraduationCap,
+                    };
+                    const IconComp = info.icon;
+                    const active = role === r;
+                    return (
+                      <button
+                        type="button"
+                        key={r}
+                        onClick={() => setRole(r)}
+                        className={`auth-role-card ${active ? "active" : ""}`}
+                      >
+                        <div className="auth-role-icon">
+                          <IconComp size={20} />
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: active ? "var(--primary)" : "var(--foreground)" }}>
+                              {info.label}
+                            </span>
+                            {active && <CheckCircle2 size={16} className="tone-primary" />}
+                          </div>
+                          <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--muted-fg)", lineHeight: 1.3 }}>
+                            {info.desc}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-11 muted mt-2">
-                  This role is saved permanently for your phone/email. Next
-                  login restores the same role automatically.
-                </p>
               </div>
 
               <label>
-                <span className="text-xs font-medium muted">School</span>
+                <span className="text-xs font-medium muted">Select School</span>
                 {backend ? (
                   <SchoolSearchSelect
                     valueId={schoolId}
