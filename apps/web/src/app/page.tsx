@@ -227,34 +227,57 @@ export default function HomePage() {
 
   return (
     <PhoneShell subtitle={subtitle} title={title}>
-      <section className="card card-pad row">
-        <div className="avatar">{initial}</div>
-        <div className="grow">
-          <p className="font-semibold text-15 truncate">{displayName}</p>
-          <p className="text-xs muted truncate">
-            {metaLine || ROLE_LABEL[user.role]}
-          </p>
-          <div className="status-live mt-1">
-            {ROLE_LABEL[user.role]} · Active
+      <section className="home-hero-card">
+        <div className="row" style={{ alignItems: "center" }}>
+          <div className="avatar" style={{ width: 52, height: 52, borderRadius: 16, fontSize: 18, fontWeight: 800 }}>
+            {initial}
           </div>
-        </div>
-        <Link
-          href={
-            isFamily
-              ? studentSurface
-                ? "/engage"
-                : "/attendance"
-              : isAdmin
-                ? "/admin"
-                : isTeacher
-                  ? "/class"
+          <div className="grow">
+            <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+              <p className="font-semibold text-15 truncate" style={{ margin: 0 }}>
+                {displayName}
+              </p>
+              <span className="home-beacon-live">
+                {ROLE_LABEL[user.role]}
+              </span>
+            </div>
+            <p className="text-xs muted truncate" style={{ margin: "2px 0 0" }}>
+              {metaLine || ROLE_LABEL[user.role]}
+            </p>
+          </div>
+          <Link
+            href={
+              isFamily
+                ? studentSurface
+                  ? "/engage"
                   : "/attendance"
-          }
-          className="icon-btn muted"
-          aria-label="Open"
-        >
-          <ArrowRight size={16} />
-        </Link>
+                : isAdmin
+                  ? "/admin"
+                  : isTeacher
+                    ? "/class"
+                    : "/attendance"
+            }
+            className="icon-btn muted"
+            aria-label="Open profile or quick action"
+            style={{ width: 40, height: 40, flexShrink: 0 }}
+          >
+            <ArrowRight size={16} />
+          </Link>
+        </div>
+
+        {user.role === "parent" && (
+          <div className="sibling-switcher-dock">
+            <span style={{ fontSize: 10, fontWeight: 700, color: "var(--muted-fg)", textTransform: "uppercase" }}>
+              Viewing:
+            </span>
+            <span className="sibling-pill active">
+              🎓 {user.childName || "Primary Student"} (Class {user.className || "6-B"})
+            </span>
+            <Link href="/profile" className="sibling-pill" title="Manage student links">
+              + Switch child
+            </Link>
+          </div>
+        )}
       </section>
 
       {isAdmin && (
@@ -744,23 +767,24 @@ function FeedItem({
 }) {
   const content = (
     <>
-      <AppIcon icon={icon} tone={toneFromClass(tone)} size={18} />
+      <AppIcon icon={icon} tone={toneFromClass(tone)} size={20} />
       <div className="grow">
-        <p className="font-medium text-sm truncate">{title}</p>
-        <p className="text-11 muted mt-1">{meta}</p>
+        <p className="font-semibold truncate" style={{ margin: 0, fontSize: 13 }}>{title}</p>
+        <p className="text-11 muted truncate" style={{ margin: "2px 0 0" }}>{meta}</p>
       </div>
       {badge && <span className={badge.className}>{badge.label}</span>}
+      <ArrowRight size={14} className="muted" style={{ opacity: 0.5, flexShrink: 0 }} />
     </>
   );
 
   return (
-    <li>
+    <li style={{ listStyle: "none", marginBottom: 8 }}>
       {href ? (
-        <Link href={href} className="row" style={{ color: "inherit", width: "100%" }}>
+        <Link href={href} className="feed-item-card">
           {content}
         </Link>
       ) : (
-        content
+        <div className="feed-item-card">{content}</div>
       )}
     </li>
   );

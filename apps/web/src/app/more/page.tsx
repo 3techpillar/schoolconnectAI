@@ -9,9 +9,11 @@ import {
   BookOpen,
   Bus,
   CalendarCheck,
+  CheckCircle2,
   FileText,
   GraduationCap,
   Megaphone,
+  School,
   Sparkles,
   Wallet,
 } from "@/components/shell/Icons";
@@ -26,23 +28,59 @@ function moduleOn(
   return true;
 }
 
+type MenuItem = {
+  href: string;
+  label: string;
+  hint: string;
+  icon: typeof Bus;
+  tone: AppIconTone;
+};
+
+type MenuSection = {
+  title: string;
+  items: MenuItem[];
+};
+
 export default function MorePage() {
   const { user } = useAuth();
   if (!user) return null;
 
   const caps = user.capabilities as Record<string, boolean> | undefined;
-  const links: Array<{
-    href: string;
-    label: string;
-    hint: string;
-    icon: typeof Bus;
-    tone: AppIconTone;
-  }> = [
+
+  // 1. Academic & Learning
+  const academicItems: MenuItem[] = [
+    moduleOn(caps, "homework")
+      ? {
+          href: "/homework",
+          label: "Homework & Tasks",
+          hint: "Assignments, submissions and due dates",
+          icon: BookOpen,
+          tone: "amber" as const,
+        }
+      : null,
+    {
+      href: "/engage",
+      label: "Learning Zone",
+      hint: "Quizzes, streaks and daily XP rewards",
+      icon: Sparkles,
+      tone: "yellow" as const,
+    },
+    {
+      href: "/report",
+      label: "Academic Report",
+      hint: "Report card snapshot and subject performance",
+      icon: FileText,
+      tone: "teal" as const,
+    },
+  ].filter((i): i is MenuItem => Boolean(i));
+
+  // 2. School Operations & Transport
+  const operationItems: MenuItem[] = [
     moduleOn(caps, "bus")
       ? {
           href: "/bus",
-          label: "Live bus",
-          hint: "Map, ETA and pickup alerts",
+          label: "Live Bus Tracker",
+          hint: "Real-time GPS map, live ETA and pickup alerts",
           icon: Bus,
           tone: "blue" as const,
         }
@@ -50,31 +88,30 @@ export default function MorePage() {
     moduleOn(caps, "attendance")
       ? {
           href: "/attendance",
-          label: "Attendance",
-          hint: "Month calendar and leaves",
+          label: "Attendance & Leaves",
+          hint: "Monthly calendar, attendance log and leave requests",
           icon: CalendarCheck,
           tone: "green" as const,
         }
       : null,
-    {
-      href: "/report",
-      label: "Report",
-      hint: "Academic snapshot",
-      icon: FileText,
-      tone: "teal" as const,
-    },
-    {
-      href: "/engage",
-      label: "Progress",
-      hint: "Learning Zone · XP and streaks",
-      icon: Sparkles,
-      tone: "yellow" as const,
-    },
+    moduleOn(caps, "fees", true)
+      ? {
+          href: "/fees",
+          label: "Fees & Payments",
+          hint: "Pending dues, fee invoices and digital receipts",
+          icon: Wallet,
+          tone: "green" as const,
+        }
+      : null,
+  ].filter((i): i is MenuItem => Boolean(i));
+
+  // 3. Notices & Broadcasts
+  const noticeItems: MenuItem[] = [
     moduleOn(caps, "circulars")
       ? {
           href: "/circulars",
-          label: "Circulars",
-          hint: "School notices and events",
+          label: "Circulars & Notices",
+          hint: "Official school bulletins, holidays and events",
           icon: Megaphone,
           tone: "orange" as const,
         }
@@ -82,57 +119,78 @@ export default function MorePage() {
     moduleOn(caps, "notifications")
       ? {
           href: "/notifications",
-          label: "Notifications",
-          hint: "Alerts from school",
+          label: "Notification Alerts",
+          hint: "Push updates, urgent notices and reminders",
           icon: Bell,
           tone: "slate" as const,
         }
       : null,
-    moduleOn(caps, "homework")
+  ].filter((i): i is MenuItem => Boolean(i));
+
+  // 4. Role-specific staff controls
+  const staffItems: MenuItem[] = [
+    user.role === "class_teacher"
       ? {
-          href: "/homework",
-          label: "Homework",
-          hint: "Assignments and due dates",
-          icon: BookOpen,
-          tone: "amber" as const,
+          href: "/class",
+          label: "Teacher Class Desk",
+          hint: "Daily roll call, homework assigner and diary",
+          icon: CheckCircle2,
+          tone: "blue" as const,
         }
       : null,
-    moduleOn(caps, "fees", true)
+    user.role === "admin" || user.role === "super_admin"
       ? {
-          href: "/fees",
-          label: "Fees",
-          hint: "Dues and payment history",
-          icon: Wallet,
-          tone: "green" as const,
+          href: "/erp",
+          label: "Desktop School ERP",
+          hint: "Administrative suite, students, fees & staff",
+          icon: School,
+          tone: "purple" as const,
         }
       : null,
+  ].filter((i): i is MenuItem => Boolean(i));
+
+  // 5. Account
+  const accountItems: MenuItem[] = [
     {
       href: "/profile",
-      label: "Profile",
-      hint: "Account, bus stop, leave",
+      label: "My Profile & Account",
+      hint: "User details, child switcher, bus stop & leaves",
       icon: GraduationCap,
       tone: "blue" as const,
     },
-  ].filter((row): row is NonNullable<typeof row> => Boolean(row));
+  ];
+
+  const sections: MenuSection[] = [
+    { title: "Academics & Learning", items: academicItems },
+    { title: "Operations & Transport", items: operationItems },
+    { title: "Communications", items: noticeItems },
+    ...(staffItems.length > 0 ? [{ title: "Staff & Management", items: staffItems }] : []),
+    { title: "Account & Preferences", items: accountItems },
+  ].filter((s) => s.items.length > 0);
 
   return (
-    <PhoneShell title="More" subtitle="All school tools">
-      <ul className="more-list">
-        {links.map((item) => (
-          <li key={item.href}>
-            <Link href={item.href} className="more-row">
-              <AppIcon icon={item.icon} tone={item.tone} size={18} />
-              <span className="grow">
-                <span className="more-row-title">{item.label}</span>
-                <span className="more-row-hint">{item.hint}</span>
-              </span>
-              <span className="more-row-chev" aria-hidden>
-                ›
-              </span>
-            </Link>
-          </li>
+    <PhoneShell title="More" subtitle="All school tools & services">
+      <div className="more-directory">
+        {sections.map((sec) => (
+          <div key={sec.title} className="more-group">
+            <span className="more-group-title">{sec.title}</span>
+            <div className="more-group-card">
+              {sec.items.map((item) => (
+                <Link key={item.href} href={item.href} className="more-row">
+                  <AppIcon icon={item.icon} tone={item.tone} size={18} />
+                  <span className="grow">
+                    <span className="more-row-title">{item.label}</span>
+                    <span className="more-row-hint">{item.hint}</span>
+                  </span>
+                  <span className="more-row-chev" aria-hidden>
+                    ›
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
     </PhoneShell>
   );
 }
