@@ -43,7 +43,7 @@ export default function FamilyReportPage() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user]);
 
   if (!user) return null;
 

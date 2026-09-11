@@ -421,7 +421,7 @@ Fix (MongoDB Atlas):
       note: "Demo seed link",
     });
 
-    let invite = await TeacherInvite.findOne({ code: people.inviteCode });
+    const invite = await TeacherInvite.findOne({ code: people.inviteCode });
     if (!invite) {
       await TeacherInvite.create({
         code: people.inviteCode,

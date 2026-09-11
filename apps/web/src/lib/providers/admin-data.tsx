@@ -184,7 +184,7 @@ export function AdminDataProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
     // reloadRemote is stable (hydrateDirectory / refreshDirectory are useCallback).
-  }, [authReady, backend, user?.id, user?.role, reloadRemote]);
+  }, [authReady, backend, user, reloadRemote]);
 
   const commit = useCallback(
     (updater: (prev: AdminState) => AdminState) => {

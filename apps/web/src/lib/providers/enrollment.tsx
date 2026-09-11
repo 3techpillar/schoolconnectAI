@@ -235,7 +235,7 @@ export function EnrollmentProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authReady, backend, user?.id, user?.role, refreshRemote]);
+  }, [authReady, backend, user, refreshRemote]);
 
   const inviteTeacher: EnrollmentCtx["inviteTeacher"] = useCallback(
     async ({ actor, name, identifier, role = "class_teacher", className }) => {

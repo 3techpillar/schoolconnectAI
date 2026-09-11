@@ -1,5 +1,5 @@
 import { ErpAuditLog, erpAuditLogToClient } from "@/lib/models/erp/ErpAuditLog";
-import { jsonError, jsonOk } from "@/lib/server/auth";
+import { jsonOk } from "@/lib/server/auth";
 import { requireErpUser, resolveErpSchoolId } from "@/lib/server/services/erp";
 import { withApiHandler } from "@/lib/server/http";
 

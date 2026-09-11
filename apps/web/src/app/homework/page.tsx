@@ -156,7 +156,7 @@ export default function HomeworkPage() {
             <p className="font-semibold text-sm" style={{ margin: 0 }}>
               Assign Class Homework
             </p>
-            <span className="text-10 muted">Class {user.className || "6-B"}</span>
+            <span className="text-10 muted">Class {user?.className || "6-B"}</span>
           </div>
           <div className="wa-meta-row">
             <select
