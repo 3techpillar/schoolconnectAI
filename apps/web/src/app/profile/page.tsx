@@ -124,29 +124,21 @@ export default function ProfilePage() {
 
   return (
     <PhoneShell subtitle={ROLE_LABEL[user.role]} title="Profile">
-      {/* Profile Hero Card */}
-      <section className="profile-hero-card">
-        <div className="row" style={{ alignItems: "center", gap: 14 }}>
-          <div className="profile-avatar-large">
-            {user.name.charAt(0).toUpperCase()}
-          </div>
-          <div className="grow">
-            <div className="row" style={{ gap: 8, alignItems: "center" }}>
-              <h2 className="font-semibold text-15" style={{ margin: 0 }}>
-                {user.name}
-              </h2>
-              <span className="profile-role-badge">
-                {ROLE_LABEL[user.role]}
-              </span>
-            </div>
-            <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
-              {user.identifier} · {user.school}
-            </p>
-          </div>
+      {/* Profile Hero */}
+      <div className="profile-hero mt-2">
+        <div className="profile-avatar-lg">
+          {user.name.charAt(0).toUpperCase()}
         </div>
+        <div className="profile-name">{user.name}</div>
+        <div className="profile-role-pill">
+          {ROLE_LABEL[user.role]} {user.className ? `· Class ${user.className}` : ""}
+        </div>
+        <p className="text-11 muted" style={{ margin: "6px 0 0" }}>
+          {user.identifier} · {user.school}
+        </p>
 
         {/* Quick Portal Shortcuts */}
-        <div className="profile-quick-actions">
+        <div className="profile-quick-actions" style={{ marginTop: "1rem", width: "100%" }}>
           <Link href="/bus" className="profile-quick-btn">
             <Bus size={18} className="tone-primary" />
             <span>Live Bus</span>
@@ -160,7 +152,7 @@ export default function ProfilePage() {
             <span>Report</span>
           </Link>
         </div>
-      </section>
+      </div>
 
       {/* Account Details Form */}
       <form className="card card-pad mt-3 space-y" onSubmit={saveAccount}>
@@ -430,17 +422,23 @@ export default function ProfilePage() {
         </ul>
       )}
 
-      <button
-        type="button"
-        className="btn-secondary mt-4 row"
-        style={{ gap: 8, justifyContent: "center", width: "100%", borderColor: "rgba(239, 68, 68, 0.3)", color: "var(--destructive)" }}
+      <div
+        className="menu-row danger mt-4"
+        style={{ cursor: "pointer" }}
         onClick={() => {
           logout();
           router.replace("/auth");
         }}
       >
-        <LogOut size={16} /> Sign out
-      </button>
+        <div className="menu-icon" style={{ background: "var(--danger-soft)" }}>
+          <LogOut size={18} style={{ color: "var(--danger)" }} />
+        </div>
+        <div className="grow">
+          <div className="menu-label">Sign out</div>
+          <div className="menu-sub">Disconnect this device</div>
+        </div>
+        <div className="chevron">›</div>
+      </div>
     </PhoneShell>
   );
 }

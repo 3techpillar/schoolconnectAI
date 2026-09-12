@@ -7,6 +7,7 @@ WhatsApp-first school communication for **web** and **React Native**, sharing on
 > **Product:** per-school **Connect** or **Full ERP** → [docs/PRODUCT-MODES.md](docs/PRODUCT-MODES.md)
 
 **Documentation hub:** **[docs/README.md](docs/README.md)**  
+**Routes & UI/UX Re-design Guide:** **[docs/ROUTES_AND_UI_UX_GUIDE.md](docs/ROUTES_AND_UI_UX_GUIDE.md)** — all 38 pages, features, links, theming  
 **Business requirements (full):** **[docs/BRD.md](docs/BRD.md)** — features, flows, diagrams, use cases, FAQs  
 **System architecture:** **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — monorepo, providers, `/api` layers, `/api/v1`  
 **Product modes:** [docs/PRODUCT-MODES.md](docs/PRODUCT-MODES.md) · **CSV import/export:** [docs/DATA-IMPORT-EXPORT.md](docs/DATA-IMPORT-EXPORT.md)
