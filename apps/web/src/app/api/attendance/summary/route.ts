@@ -1,5 +1,5 @@
 import { getAttendanceSummary } from "@/lib/server/services/attendance-service";
-import { jsonError, jsonOk } from "@/lib/server/auth";
+import { jsonOk } from "@/lib/server/auth";
 import { requireUser, withApiHandler } from "@/lib/server/http";
 
 async function getHandler() {

@@ -138,7 +138,7 @@ export default function HomePage() {
     return () => {
       cancelled = true;
     };
-  }, [ready, user?.id, user?.schoolId, backend]);
+  }, [ready, user, backend]);
 
   if (!user || !schoolReady || !homeExtraReady) {
     return (

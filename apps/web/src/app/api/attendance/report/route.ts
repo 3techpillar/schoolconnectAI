@@ -1,6 +1,6 @@
 import { ClassDesk } from "@/lib/models/ops/ClassDesk";
 import { Leave, leaveToClient } from "@/lib/models/ops/Leave";
-import { jsonError, jsonOk } from "@/lib/server/auth";
+import { jsonOk } from "@/lib/server/auth";
 import { requireUser, withApiHandler } from "@/lib/server/http";
 
 function monthPrefix(d = new Date()) {

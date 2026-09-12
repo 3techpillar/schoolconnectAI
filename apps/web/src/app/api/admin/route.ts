@@ -82,7 +82,7 @@ export async function GET() {
   const schoolId =
     user.role === "super_admin" ? undefined : user.schoolId || undefined;
   const doc = await ensureAdminDoc(
-    user.schoolId || undefined,
+    schoolId,
     user.schoolName || "",
   );
 

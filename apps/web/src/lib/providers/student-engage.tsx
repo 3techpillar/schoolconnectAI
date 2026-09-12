@@ -115,6 +115,20 @@ function saveState(state: EngageState) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
+function unlockBadge(prev: EngageState, id: string): EngageState {
+  const badges = prev.badges.map((b) =>
+    b.id === id && !b.unlockedAt ? { ...b, unlockedAt: Date.now() } : b,
+  );
+  return { ...prev, badges };
+}
+
+function awardXpInternal(prev: EngageState, amount: number): EngageState {
+  const xp = prev.xp + amount;
+  let next = { ...prev, xp, celebrateUntil: Date.now() + 2200 };
+  if (levelFromXp(xp) >= 3) next = unlockBadge(next, "level-3");
+  return next;
+}
+
 const Ctx = createContext<EngageCtx | null>(null);
 
 export function StudentEngageProvider({ children }: { children: ReactNode }) {
@@ -209,20 +223,6 @@ export function StudentEngageProvider({ children }: { children: ReactNode }) {
     },
     [],
   );
-
-  const unlockBadge = (prev: EngageState, id: string): EngageState => {
-    const badges = prev.badges.map((b) =>
-      b.id === id && !b.unlockedAt ? { ...b, unlockedAt: Date.now() } : b,
-    );
-    return { ...prev, badges };
-  };
-
-  const awardXpInternal = (prev: EngageState, amount: number): EngageState => {
-    const xp = prev.xp + amount;
-    let next = { ...prev, xp, celebrateUntil: Date.now() + 2200 };
-    if (levelFromXp(xp) >= 3) next = unlockBadge(next, "level-3");
-    return next;
-  };
 
   const checkIn = useCallback(() => {
     if (backendRef.current) {

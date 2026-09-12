@@ -41,6 +41,12 @@ type MenuSection = {
   items: MenuItem[];
 };
 
+function compactMenuItems(
+  items: (MenuItem | null | false | undefined)[],
+): MenuItem[] {
+  return items.filter((i): i is MenuItem => Boolean(i));
+}
+
 export default function MorePage() {
   const { user } = useAuth();
   if (!user) return null;
@@ -48,106 +54,90 @@ export default function MorePage() {
   const caps = user.capabilities as Record<string, boolean> | undefined;
 
   // 1. Academic & Learning
-  const academicItems: MenuItem[] = [
-    moduleOn(caps, "homework")
-      ? {
-          href: "/homework",
-          label: "Homework & Tasks",
-          hint: "Assignments, submissions and due dates",
-          icon: BookOpen,
-          tone: "amber" as const,
-        }
-      : null,
+  const academicItems = compactMenuItems([
+    moduleOn(caps, "homework") && {
+      href: "/homework",
+      label: "Homework & Tasks",
+      hint: "Assignments, submissions and due dates",
+      icon: BookOpen,
+      tone: "amber",
+    },
     {
       href: "/engage",
       label: "Learning Zone",
       hint: "Quizzes, streaks and daily XP rewards",
       icon: Sparkles,
-      tone: "yellow" as const,
+      tone: "yellow",
     },
     {
       href: "/report",
       label: "Academic Report",
       hint: "Report card snapshot and subject performance",
       icon: FileText,
-      tone: "teal" as const,
+      tone: "teal",
     },
-  ].filter((i): i is MenuItem => Boolean(i));
+  ]);
 
   // 2. School Operations & Transport
-  const operationItems: MenuItem[] = [
-    moduleOn(caps, "bus")
-      ? {
-          href: "/bus",
-          label: "Live Bus Tracker",
-          hint: "Real-time GPS map, live ETA and pickup alerts",
-          icon: Bus,
-          tone: "blue" as const,
-        }
-      : null,
-    moduleOn(caps, "attendance")
-      ? {
-          href: "/attendance",
-          label: "Attendance & Leaves",
-          hint: "Monthly calendar, attendance log and leave requests",
-          icon: CalendarCheck,
-          tone: "green" as const,
-        }
-      : null,
-    moduleOn(caps, "fees", true)
-      ? {
-          href: "/fees",
-          label: "Fees & Payments",
-          hint: "Pending dues, fee invoices and digital receipts",
-          icon: Wallet,
-          tone: "green" as const,
-        }
-      : null,
-  ].filter((i): i is MenuItem => Boolean(i));
+  const operationItems = compactMenuItems([
+    moduleOn(caps, "bus") && {
+      href: "/bus",
+      label: "Live Bus Tracker",
+      hint: "Real-time GPS map, live ETA and pickup alerts",
+      icon: Bus,
+      tone: "blue",
+    },
+    moduleOn(caps, "attendance") && {
+      href: "/attendance",
+      label: "Attendance & Leaves",
+      hint: "Monthly calendar, attendance log and leave requests",
+      icon: CalendarCheck,
+      tone: "green",
+    },
+    moduleOn(caps, "fees", true) && {
+      href: "/fees",
+      label: "Fees & Payments",
+      hint: "Pending dues, fee invoices and digital receipts",
+      icon: Wallet,
+      tone: "green",
+    },
+  ]);
 
   // 3. Notices & Broadcasts
-  const noticeItems: MenuItem[] = [
-    moduleOn(caps, "circulars")
-      ? {
-          href: "/circulars",
-          label: "Circulars & Notices",
-          hint: "Official school bulletins, holidays and events",
-          icon: Megaphone,
-          tone: "orange" as const,
-        }
-      : null,
-    moduleOn(caps, "notifications")
-      ? {
-          href: "/notifications",
-          label: "Notification Alerts",
-          hint: "Push updates, urgent notices and reminders",
-          icon: Bell,
-          tone: "slate" as const,
-        }
-      : null,
-  ].filter((i): i is MenuItem => Boolean(i));
+  const noticeItems = compactMenuItems([
+    moduleOn(caps, "circulars") && {
+      href: "/circulars",
+      label: "Circulars & Notices",
+      hint: "Official school bulletins, holidays and events",
+      icon: Megaphone,
+      tone: "orange",
+    },
+    moduleOn(caps, "notifications") && {
+      href: "/notifications",
+      label: "Notification Alerts",
+      hint: "Push updates, urgent notices and reminders",
+      icon: Bell,
+      tone: "slate",
+    },
+  ]);
 
   // 4. Role-specific staff controls
-  const staffItems: MenuItem[] = [
-    user.role === "class_teacher"
-      ? {
-          href: "/class",
-          label: "Teacher Class Desk",
-          hint: "Daily roll call, homework assigner and diary",
-          icon: CheckCircle2,
-          tone: "blue" as const,
-        }
-      : null,
-    user.role === "admin" || user.role === "super_admin"
-      ? {
-          href: "/erp",
-          label: "Desktop School ERP",
-          hint: "Administrative suite, students, fees & staff",
-          icon: School,
-          tone: "purple" as const,
-        }
-      : null,
-  ].filter((i): i is MenuItem => Boolean(i));
+  const staffItems = compactMenuItems([
+    user.role === "class_teacher" && {
+      href: "/class",
+      label: "Teacher Class Desk",
+      hint: "Daily roll call, homework assigner and diary",
+      icon: CheckCircle2,
+      tone: "blue",
+    },
+    (user.role === "admin" || user.role === "super_admin") && {
+      href: "/erp",
+      label: "Desktop School ERP",
+      hint: "Administrative suite, students, fees & staff",
+      icon: School,
+      tone: "blue",
+    },
+  ]);
 
   // 5. Account
   const accountItems: MenuItem[] = [

@@ -1,4 +1,4 @@
-import { jsonError, jsonOk } from "@/lib/server/auth";
+import { jsonOk } from "@/lib/server/auth";
 import { buildHomeFeed, homeworkStats } from "@/lib/server/services/feed-service";
 import { requireUser, withApiHandler } from "@/lib/server/http";
 

@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/shared/api-client";
 import { useAuth, ROLE_LABEL, SIGNUP_ROLES, type Role } from "@/lib/providers/auth";
 import { appConfig } from "@/lib/shared/config";
-import { DEMO_ADMIN_ACCOUNTS, DEMO_FAMILY_ACCOUNTS } from "@schoolconnect/shared";
 import { needsEnrollmentApproval, needsSchoolAssignment, useEnrollment } from "@/lib/providers/enrollment";
 import type { TeacherInvite } from "@/lib/providers/enrollment";
 import { WelcomeHints, WelcomeSketch } from "@/components/shell/WelcomeSketch";

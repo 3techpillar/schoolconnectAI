@@ -211,7 +211,11 @@ export default function ChatThreadPage() {
                   {mine && m.pending ? " · Sending…" : ""}
                   {mine && m.failed ? " · Failed" : ""}
                   {mine && !m.pending && !m.failed && (
-                    <span className="wa-read-status" style={{ marginLeft: 4 }}>
+                    <span
+                      className="wa-read-status"
+                      style={{ marginLeft: 4 }}
+                      title={readCount > 0 ? `Read by ${readCount}` : "Sent"}
+                    >
                       <CheckCheck size={13} />
                     </span>
                   )}

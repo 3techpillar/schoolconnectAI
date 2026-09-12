@@ -10,7 +10,7 @@ import {
   type ReactNode,
 } from "react";
 import { usePathname } from "next/navigation";
-import type { Role, UserProfile } from "@/lib/providers/auth";
+import type { UserProfile } from "@/lib/providers/auth";
 import { useAuth } from "@/lib/providers/auth";
 import { apiFetch } from "@/lib/shared/api-client";
 import { addDaysIso, formatDueLabel, toIsoDate } from "@/lib/shared/dates";
@@ -488,7 +488,7 @@ export function SchoolDataProvider({ children }: { children: ReactNode }) {
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVis);
     };
-  }, [backend, user?.id, authReady, loadRemote, pathname]);
+  }, [backend, user?.id, user?.schoolId, authReady, loadRemote, pathname]);
 
   const clearChatError = useCallback(() => setChatError(null), []);
 
