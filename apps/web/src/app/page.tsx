@@ -34,6 +34,7 @@ import {
   ShieldCheck,
   FileText,
 } from "@/components/shell/Icons";
+import { AdventureWorldView } from "@/components/student/AdventureWorldView";
 
 export default function HomePage() {
   const { user, ready, backend } = useAuth();
@@ -65,6 +66,7 @@ export default function HomePage() {
   >([]);
   const [hwStats, setHwStats] = useState({ label: "0", hint: "—" });
   const [homeExtraReady, setHomeExtraReady] = useState(false);
+  const [viewMode, setViewMode] = useState<"auto" | "adventure" | "desk">("auto");
 
   useEffect(() => {
     if (ready && !user) router.replace("/auth");
@@ -139,10 +141,10 @@ export default function HomePage() {
     };
   }, [ready, user, backend]);
 
-  if (!user || !schoolReady || !homeExtraReady) {
+  if (!ready || !user) {
     return (
       <div className="app-shell">
-        <LoadingBlock label="Loading your day…" splash />
+        <LoadingBlock label="Opening EduWorld…" splash />
       </div>
     );
   }
@@ -151,19 +153,6 @@ export default function HomePage() {
     return (
       <div className="app-shell">
         <LoadingBlock label="Opening…" splash />
-      </div>
-    );
-  }
-
-  // Only wait on role-relevant providers.
-  if (
-    (isFamilyRole(user.role) && !engage.ready) ||
-    (canPostAsTeacher(user) && !teacherClass.ready) ||
-    (isSchoolAdmin(user) && !admin.ready)
-  ) {
-    return (
-      <div className="app-shell">
-        <LoadingBlock label="Loading your day…" splash />
       </div>
     );
   }
@@ -222,9 +211,53 @@ export default function HomePage() {
   const unmarked =
     teacherClass.roster.length - teacherClass.markedCount;
 
+  const isStudentUser = Boolean(studentSurface || user?.role === "student");
+  const showAdventure = viewMode === "adventure" || (viewMode === "auto" && isStudentUser);
+
+  if (showAdventure && user) {
+    return (
+      <AdventureWorldView
+        studentName={firstName}
+        className={user.className || "Class 6-B"}
+        initialXp={engage.xp || 1250}
+        initialStreak={engage.streak || 7}
+        initialLevel={engage.level || 7}
+        onSwitchToParentDesk={() => setViewMode("desk")}
+      />
+    );
+  }
+
   return (
     <PhoneShell subtitle={subtitle} title={title}>
       <section className="home-hero-card">
+        {/* Switch to Adventure Mode Banner for Admins/Teachers/Parents */}
+        <div style={{ marginBottom: 12 }}>
+          <button
+            type="button"
+            onClick={() => setViewMode("adventure")}
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "0.65rem 0.95rem",
+              borderRadius: "14px",
+              background: "linear-gradient(135deg, #4338CA 0%, #7C3AED 100%)",
+              color: "#ffffff",
+              border: "none",
+              fontWeight: 800,
+              fontSize: "0.82rem",
+              cursor: "pointer",
+              boxShadow: "0 6px 18px -4px rgba(99, 102, 241, 0.4)",
+            }}
+          >
+            <span>🎮 Student Adventure World (Preview)</span>
+            <span style={{ background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 999, fontSize: "0.72rem" }}>
+              Explore 🚀
+            </span>
+          </button>
+        </div>
+
         <div className="row" style={{ alignItems: "center" }}>
           <div className="avatar" style={{ width: 52, height: 52, borderRadius: 16, fontSize: 18, fontWeight: 800 }}>
             {initial}
