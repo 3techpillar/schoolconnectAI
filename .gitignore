@@ -31,15 +31,14 @@ yarn-error.log*
 pnpm-debug.log*
 
 # env / local
+.env
+.env.*
 *.local
 .env*.local
 
 # keep shared env templates tracked
 !.env.example
-!.env.development
-!.env.staging
-!.env.production
-
+!.env.sample
 
 # editor
 .vscode/*
