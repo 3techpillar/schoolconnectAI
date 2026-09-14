@@ -1,6 +1,6 @@
 # SchoolConnect — Backend
 
-Next.js App Router API (`apps/web/src/app/api`) + MongoDB (Mongoose) + JWT (cookie or Bearer).
+Standalone Express API (`apps/server`) + MongoDB (Mongoose) + JWT (cookie or Bearer).
 
 When `MONGO_URI` or `MONGODB_URI` is configured and `/api/health` returns `"mongo": true`, clients call these APIs.
 
@@ -10,24 +10,21 @@ When `MONGO_URI` or `MONGODB_URI` is configured and `/api/health` returns `"mong
 
 ## Code layout (server-relevant)
 
-Source lives under **`src/`**. HTTP URLs do not include `src/` (e.g. file `src/app/api/fees/route.ts` → `POST /api/fees`).
+Source lives under **`apps/server/src/`**.
 
 | Path | Role |
 |------|------|
-| `src/lib/shared/` | roles, dates, config, api-client, engage-defaults, class-utils, money, bus-defaults |
-| `src/lib/providers/` | Client contexts that call these APIs |
 | `src/lib/server/auth.ts` | JWT + `sc_session` cookie |
 | `src/lib/server/response.ts` | `jsonOk` / `jsonError` |
-| `src/lib/server/http.ts` | `requireDb` / `requireUser` / `withApiHandler` |
-| `src/lib/server/request.ts` | `parseJsonBody` / `readTrimmed` / `normalizeIdentifier` |
+| `src/lib/server/http.ts` | `requireUser` middlewares |
+| `src/lib/server/request.ts` | `normalizeIdentifier` |
 | `src/lib/server/secrets.ts` | Dedicated `JWT_SECRET` (no Mongo URI fallback) |
 | `src/lib/server/hash.ts` | OTP HMAC helpers |
 | `src/lib/server/services/*` | Domain services (otp, chat, erp, csv, seed, …) |
 | `src/lib/server/validate.ts` + `schemas.ts` | Zod body validation |
-| `src/middleware.ts` | OTP path rate limit |
 | `src/lib/db/mongodb.ts` | Connection (`MONGO_URI` \| `MONGODB_URI`) |
 | `src/lib/models/{core,comms,ops,family,erp}/` | Mongoose schemas + `*ToClient` |
-| `src/app/api/**` | Route handlers |
+| `src/index.ts` | Express Server & Route Definitions |
 
 `jsonOk` / `jsonError` are also re-exported from `src/lib/server/auth.ts` for existing route imports.
 
@@ -36,14 +33,14 @@ Full folder + provider tree: **[ARCHITECTURE.md](ARCHITECTURE.md)**.
 ## Quick start
 
 ```bash
-# .env or .env.local
-MONGO_URI=mongodb+srv://...
+# apps/server/.env
+MONGODB_URI=mongodb+srv://...
 JWT_SECRET=long-random-secret
 OTP_PROVIDER=demo
 
 npm run seed
-npm run dev
-curl -s http://localhost:3000/api/health
+npm run dev:server
+curl -s http://localhost:4000/api/health
 ```
 
 Expected health (happy path):

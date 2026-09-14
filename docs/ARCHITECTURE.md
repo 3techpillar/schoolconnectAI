@@ -25,22 +25,22 @@ Monorepo layout after Mongo/API migration, family parity, ERP, transfers, CSV MD
 ```text
 schoolconnect/
 ├── apps/
-│   ├── web/                         # Next.js UI + /api
+│   ├── server/                      # Express API Backend
 │   │   └── src/
-│   │       ├── app/                 # Pages + api/ + erp/
-│   │       ├── components/
-│   │       │   ├── shell/           # PhoneShell, StatusUI, Icons, …
-│   │       │   ├── admin/           # EnrollmentDesk
-│   │       │   └── erp/             # ErpShell, CSV, TransferDesk
-│   │       ├── lib/
-│   │       │   ├── db/
-│   │       │   ├── models/          # core · comms · ops · family · erp
-│   │       │   ├── providers/
-│   │       │   ├── server/          # http/auth infra + services/
-│   │       │   └── shared/          # apiFetch + package re-exports
+│   │       ├── index.ts             # Server entry point
 │   │       ├── modules/             # /api/v1 domain modules
 │   │       ├── shared/              # v1 RBAC + tenant helpers
-│   │       └── STRUCTURE.md         # Folder roles cheat-sheet
+│   │       └── lib/
+│   │           ├── db/              # mongodb connection
+│   │           ├── models/          # core · comms · ops · family · erp
+│   │           └── server/          # http/auth infra + services/
+│   ├── web/                         # Next.js UI Frontend
+│   │   └── src/
+│   │       ├── app/                 # Pages
+│   │       ├── components/          # shell/ · admin/ · erp/
+│   │       └── lib/
+│   │           ├── providers/
+│   │           └── shared/          # apiFetch + package re-exports
 │   └── mobile/                      # React Native Family MVP
 ├── packages/
 │   └── shared/                      # @schoolconnect/shared
@@ -59,16 +59,15 @@ Folder cheat-sheet: [`apps/web/src/STRUCTURE.md`](../apps/web/src/STRUCTURE.md).
 ```mermaid
 flowchart TB
   subgraph browser [Browser]
-    Pages["src/app/**/page.tsx"]
-    Components["src/components shell·admin·erp"]
-    Providers["src/lib/providers"]
-    Shared["src/lib/shared"]
+    Pages["apps/web/src/app/**/page.tsx"]
+    Components["apps/web/src/components"]
+    Providers["apps/web/src/lib/providers"]
+    Shared["apps/web/src/lib/shared"]
   end
-  subgraph next [Next.js]
-    MW["src/middleware.ts"]
-    Api["src/app/api/**/route.ts"]
+  subgraph server [apps/server Express API]
+    Api["src/index.ts (Routes)"]
     Infra["src/lib/server http·auth"]
-    Server["src/lib/server/services"]
+    Services["src/lib/server/services"]
     Models["src/lib/models domain folders"]
     DB["src/lib/db/mongodb"]
   end
@@ -77,27 +76,25 @@ flowchart TB
   Pages --> Providers
   Providers --> Shared
   Providers -->|fetch credentials:include| Api
-  MW -->|OTP paths only| Api
   Api --> Infra
-  Api --> Server
+  Api --> Services
   Api --> Models
-  Server --> Models
-  Server --> DB
+  Services --> Models
+  Services --> DB
   Models --> DB
   DB --> Mongo
 ```
 
 | Layer | Path | Responsibility |
 |-------|------|----------------|
-| UI routes | `src/app/**/page.tsx` | Screens only — no business DB access |
-| Components | `src/components/{shell,admin,erp}/` | Shell chrome, enrollment desk, ERP panels |
-| Providers | `src/lib/providers/` | Client state; `apiFetch` when Mongo is up |
-| Shared | `src/lib/shared/` | Pure helpers usable on client + server |
-| API | `src/app/api/**/route.ts` | HTTP boundary |
-| Server | `src/lib/server/` | Auth/HTTP infra; domain logic in `services/` |
-| Models | `src/lib/models/{core,comms,ops,family,erp}/` | Schemas + `*ToClient` DTOs |
-| DB | `src/lib/db/mongodb.ts` | `connectMongo` (`MONGO_URI` \| `MONGODB_URI`) |
-| Middleware | `src/middleware.ts` | In-memory OTP rate limit |
+| UI routes | `apps/web/src/app/**/page.tsx` | Screens only — no business DB access |
+| Components | `apps/web/src/components/{shell,admin,erp}/` | Shell chrome, enrollment desk, ERP panels |
+| Providers | `apps/web/src/lib/providers/` | Client state; `apiFetch` when Mongo is up |
+| Shared | `apps/web/src/lib/shared/` | Pure helpers usable on client + server |
+| API routes | `apps/server/src/index.ts` | Express HTTP boundary |
+| Server logic | `apps/server/src/lib/server/` | Auth/HTTP infra; domain logic in `services/` |
+| Models | `apps/server/src/lib/models/{core,comms,ops,family,erp}/` | Schemas + `*ToClient` DTOs |
+| DB | `apps/server/src/lib/db/mongodb.ts` | `connectMongo` (`MONGO_URI` \| `MONGODB_URI`) |
 
 **Import rule:**
 
@@ -227,7 +224,7 @@ CSV bulk load: [DATA-IMPORT-EXPORT.md](DATA-IMPORT-EXPORT.md).
 
 ---
 
-## 9. Server (`src/lib/server`)
+## 9. Server (`apps/server/src/lib/server`)
 
 **Infra (stay at package root):**
 
@@ -247,7 +244,7 @@ Import example: `import { issueOtp } from "@/lib/server/services/otp-service"`.
 
 ---
 
-## 10. Models (`src/lib/models`)
+## 10. Models (`apps/server/src/lib/models`)
 
 | Folder | Models |
 |--------|--------|
@@ -293,9 +290,9 @@ Page → Provider method → apiFetch("/api/…")
 
 ## 13. Adding a feature (checklist)
 
-1. Model in `src/lib/models/{core|comms|ops|family|erp}/` (+ `toClient`)
-2. Service in `src/lib/server/services/` if logic is reusable
-3. Route under `src/app/api/<resource>/`
+1. Model in `apps/server/src/lib/models/{core|comms|ops|family|erp}/` (+ `toClient`)
+2. Service in `apps/server/src/lib/server/services/` if logic is reusable
+3. Route in `apps/server/src/index.ts` (or modular route)
 4. Provider method in `src/lib/providers/` (guard with `backend`)
 5. Page under `src/app/<route>/page.tsx`
 6. Update **BACKEND.md** API map + **ROLES-AND-FEATURES.md** if access differs by role
@@ -320,11 +317,8 @@ Page → Provider method → apiFetch("/api/…")
 Domain modules + versioned routes. Legacy `/api/*` and `/api/erp/*` stay for web + mobile.
 
 ```text
-apps/web/src/
-├── app/api/
-│   ├── v1/                 # Preferred for new clients
-│   ├── erp/                # Desktop ERP convenience APIs
-│   └── …                   # Existing app routes (auth, chats, …)
+apps/server/src/
+├── index.ts                # Main Express App + Routes
 ├── modules/                # student · school · class · attendance · fee · leave · user
 ├── shared/                 # auth · rbac · tenant
 └── lib/models/             # Canonical Mongoose schemas

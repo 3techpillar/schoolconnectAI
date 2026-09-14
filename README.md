@@ -102,17 +102,12 @@ Free plan **~1 year** per school (`subscriptionExpiresAt`). Details: **[docs/PRO
 
 ```text
 apps/
-  web/                    # Next.js UI + /api/* backend
-    src/app/              # Pages + API routes (+ /erp, /api/v1)
+  server/                 # Express API Backend + MongoDB Models + Services
+  web/                    # Next.js UI Frontend
+    src/app/              # UI Pages
     src/components/       # shell/ · admin/ · erp/
-    src/lib/
-      models/             # core · comms · ops · family · erp
-      server/             # http/auth + services/
-      providers/ shared/ db/
-    src/modules/          # Domain modules for /api/v1
-    src/shared/           # v1 RBAC + tenant
+    src/lib/              # providers/ · shared/ (fetch client)
     src/STRUCTURE.md      # Folder roles cheat-sheet
-    config/api-proxy.ts   # Local-dev API rewrite only
   mobile/                 # React Native CLI Family MVP
 packages/
   shared/                 # @schoolconnect/shared — roles, product modes, DTOs, Zod
