@@ -7,6 +7,7 @@ Hub for product, architecture, and ops. Setup & scripts live in the root **[READ
 | I want to… | Read |
 |------------|------|
 | **Full business requirements** | **[BRD.md](BRD.md)** (v1.2 — features, diagrams, use cases, FAQs) |
+| **All 38 Routes & UI/UX Re-design Guide** | **[ROUTES_AND_UI_UX_GUIDE.md](ROUTES_AND_UI_UX_GUIDE.md)** (Screens, features, links, theming) |
 | Campus × mode matrix, transfers, subscription | [PRODUCT-MODES.md](PRODUCT-MODES.md) |
 | **Import/export students & teachers (CSV)** | [DATA-IMPORT-EXPORT.md](DATA-IMPORT-EXPORT.md) |
 | Run locally / seed / **all demo logins** | [../README.md](../README.md#demo-accounts) |
@@ -32,6 +33,7 @@ Free subscription ~1 year per school · transfers: `/transfers` or `/erp/transfe
 ```text
 docs/
 ├── README.md              ← you are here
+├── ROUTES_AND_UI_UX_GUIDE.md # 38-route UI/UX & feature catalog
 ├── BRD.md                 # Full BRD (v1.2)
 ├── PRODUCT-MODES.md       # Mode × campus · transfers · subscription
 ├── ROLES-AND-FEATURES.md  # Per-role UI / API matrix
@@ -46,6 +48,7 @@ docs/
 
 ## Product
 
+- **[ROUTES_AND_UI_UX_GUIDE.md](ROUTES_AND_UI_UX_GUIDE.md)** — all 38 routes, components, data flow & UI re-design guide
 - **[BRD.md](BRD.md)** — features, flowcharts, use cases, FAQs  
 - **[PRODUCT-MODES.md](PRODUCT-MODES.md)** — Connect/ERP, group/open transfer, free expiry  
 - **[ROLES-AND-FEATURES.md](ROLES-AND-FEATURES.md)** — roles, nav, feature catalog  

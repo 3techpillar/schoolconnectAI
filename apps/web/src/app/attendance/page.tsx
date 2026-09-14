@@ -281,68 +281,64 @@ export default function AttendancePage() {
         </>
       ) : (
         <>
-          <section className="card" style={{ padding: "1.25rem" }}>
-            <div className="row" style={{ alignItems: "flex-end" }}>
-              <div>
-                <p className="text-xs muted">This month</p>
-                <p
-                  className="tone-success font-semibold"
-                  style={{
-                    fontSize: "2.25rem",
-                    margin: "0.25rem 0 0",
-                    letterSpacing: "-0.02em",
-                  }}
-                >
-                  {leaveStats.pct}%
-                </p>
+          <div className="summary-card mt-2">
+            <div className="ring" style={{ ["--p" as string]: `${leaveStats.pct}%` }}>
+              <div className="ring-inner">{leaveStats.pct}%</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 16, marginBottom: 4 }}>
+                {leaveStats.pct >= 85 ? "Healthy attendance" : "Needs attention"}
               </div>
-              <div
-                className="text-xs muted"
-                style={{ marginLeft: "auto", textAlign: "right", lineHeight: 1.6 }}
-              >
-                <p style={{ margin: 0 }}>{leaveStats.present} Present</p>
-                <p style={{ margin: 0 }}>
-                  {leaveStats.absent} Absent · {leaveStats.leave} Leave ·{" "}
-                  {leaveStats.half} Half
-                </p>
+              <div style={{ fontSize: 12, opacity: 0.88 }}>
+                {leaveStats.present} present · {leaveStats.absent} absent · {leaveStats.leave} leave this month
               </div>
             </div>
-            <div className="progress">
-              <span style={{ width: `${leaveStats.pct}%` }} />
-            </div>
-          </section>
+          </div>
 
-          <section className="card card-pad mt-4">
-            <p className="text-xs muted" style={{ margin: "0 0 0.5rem" }}>
-              Approved leaves show as <strong>L</strong> on the calendar.
-            </p>
-            <div className="cal-grid text-10 font-semibold muted mb-2">
-              {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => (
-                <div key={i}>{d}</div>
-              ))}
-            </div>
-            <div className="cal-grid">
-              {cells.map((d, i) => (
-                <div key={i}>
-                  {d && (
-                    <div className={`cal-day cal-${statusMap[d] ?? "empty"}`}>
-                      {d}
-                    </div>
-                  )}
+          <div className="month-nav">
+            <div className="arrow-btn">‹</div>
+            <div className="m-title">{monthLabel}</div>
+            <div className="arrow-btn">›</div>
+          </div>
+
+          <div className="cal-grid">
+            <div className="cal-dow">S</div>
+            <div className="cal-dow">M</div>
+            <div className="cal-dow">T</div>
+            <div className="cal-dow">W</div>
+            <div className="cal-dow">T</div>
+            <div className="cal-dow">F</div>
+            <div className="cal-dow">S</div>
+            {cells.map((d, i) => {
+              if (!d) return <div key={i} className="cal-day blank" />;
+              const st = statusMap[d];
+              const cls = st === "P" ? "p" : st === "A" ? "a" : st === "L" ? "l" : st === "H" ? "h" : "blank";
+              return (
+                <div key={i} className={`cal-day ${cls}`}>
+                  {d}
                 </div>
-              ))}
-            </div>
-            <div className="legend">
-              <Legend color="var(--success)" label="Present" />
-              <Legend color="var(--destructive)" label="Absent" />
-              <Legend color="var(--warning)" label="Leave" />
-              <Legend color="var(--secondary)" label="Half" />
-            </div>
-          </section>
+              );
+            })}
+          </div>
 
-          <div className="row mt-3" style={{ gap: 8 }}>
-            <Link href="/profile" className="btn-secondary grow">
-              Apply leave in Profile
+          <div className="legend mb-3">
+            <Legend color="var(--success)" label="Present" />
+            <Legend color="var(--danger)" label="Absent" />
+            <Legend color="var(--info)" label="Leave" />
+            <Legend color="var(--warning)" label="Half" />
+          </div>
+
+          <div className="hw-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface)" }}>
+            <div>
+              <div className="font-bold text-sm" style={{ marginBottom: 2 }}>Need a day off?</div>
+              <div className="text-11 muted">Submit leave application to teacher</div>
+            </div>
+            <Link
+              href="/profile"
+              className="icon-btn"
+              style={{ background: "var(--primary)", color: "#ffffff", boxShadow: "var(--shadow-pop)", textDecoration: "none", width: 36, height: 36, fontSize: 20 }}
+            >
+              +
             </Link>
           </div>
 

@@ -508,4 +508,4 @@ Whenever you log in using any of the email addresses below, use the demo OTP cod
 
 ---
 
-*This guide covers every concept, screen, and workflow in the SchoolConnect AI ecosystem. For technical developer details, API routes, or deployment steps, refer to the [docs/README.md](docs/README.md) hub.*
+*This guide covers every concept, screen, and workflow in the SchoolConnect AI ecosystem. For screen-by-screen UI/UX breakdowns and layout references, see [docs/ROUTES_AND_UI_UX_GUIDE.md](docs/ROUTES_AND_UI_UX_GUIDE.md). For technical developer details, API routes, or deployment steps, refer to the [docs/README.md](docs/README.md) hub.*

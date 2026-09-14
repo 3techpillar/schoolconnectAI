@@ -110,11 +110,24 @@ export default function HomeworkPage() {
       title="Homework"
       headerAccent="plain"
     >
-      {/* 3-Stat Summary Header */}
-      <div className="card card-pad summary-3 mt-1">
-        <Stat label="Pending" value={String(counts.pending)} tone="tone-warning" />
-        <Stat label="In progress" value={String(counts.progress)} tone="tone-info" />
-        <Stat label="Done" value={String(counts.done)} tone="tone-success" />
+      {/* 4-KPI Row */}
+      <div className="kpi-row mt-2">
+        <div className="kpi">
+          <div className="n" style={{ color: "var(--warning)" }}>{counts.pending}</div>
+          <div className="l">Pending</div>
+        </div>
+        <div className="kpi">
+          <div className="n" style={{ color: "var(--info)" }}>{counts.progress}</div>
+          <div className="l">In progress</div>
+        </div>
+        <div className="kpi">
+          <div className="n" style={{ color: "var(--success)" }}>{counts.done}</div>
+          <div className="l">Done</div>
+        </div>
+        <div className="kpi">
+          <div className="n" style={{ color: "var(--danger)" }}>{counts.overdue}</div>
+          <div className="l">Overdue</div>
+        </div>
       </div>
 
       {/* Subject Filter Bar */}
@@ -251,17 +264,24 @@ export default function HomeworkPage() {
                   )}
                   <StatusPill status={it.status} />
                 </div>
-                <button
-                  type="button"
-                  className="hw-cycle-btn"
-                  onClick={() => cycleStatus(it.id, it.status)}
-                >
-                  {it.status === "pending"
-                    ? "Start task"
-                    : it.status === "in-progress"
-                      ? "Submit ✓"
-                      : "Completed"}
-                </button>
+                <div className="row" style={{ gap: 8, alignItems: "center" }}>
+                  {it.status !== "submitted" && it.status !== "reviewed" && (
+                    <span style={{ fontSize: 11, color: "var(--ink-soft)", fontWeight: 700 }}>
+                      +20 XP
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    className="hw-cycle-btn"
+                    onClick={() => cycleStatus(it.id, it.status)}
+                  >
+                    {it.status === "pending"
+                      ? "Start task"
+                      : it.status === "in-progress"
+                        ? "Submit ✓"
+                        : "Completed"}
+                  </button>
+                </div>
               </div>
             </li>
           );
@@ -277,25 +297,6 @@ export default function HomeworkPage() {
         />
       ) : null}
     </PhoneShell>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: string;
-  tone: string;
-}) {
-  return (
-    <div>
-      <p className={`font-bold ${tone}`} style={{ fontSize: "1.4rem", margin: 0, lineHeight: 1.2 }}>
-        {value}
-      </p>
-      <p className="text-11 muted mt-1" style={{ margin: "4px 0 0" }}>{label}</p>
-    </div>
   );
 }
 

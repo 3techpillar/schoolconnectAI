@@ -33,7 +33,6 @@ import {
   GraduationCap,
   ShieldCheck,
   FileText,
-  Bell,
 } from "@/components/shell/Icons";
 
 export default function HomePage() {
@@ -177,8 +176,6 @@ export default function HomePage() {
   const showFees = Boolean(user.capabilities?.fees);
   const showBus = user.capabilities?.bus !== false;
   const showCirculars = user.capabilities?.circulars !== false;
-  const showAttendance = user.capabilities?.attendance !== false;
-  const showNotifications = user.capabilities?.notifications !== false;
   const superMode = isSuperAdmin(user);
   const firstName = user.name.split(" ")[0] ?? "there";
   const focusName =
@@ -279,6 +276,27 @@ export default function HomePage() {
           </div>
         )}
       </section>
+
+      {isFamily && (
+        <div className="hero-card mt-3">
+          <div className="hero-text grow">
+            <div className="hero-kicker">{metaLine || "Radoms School"}</div>
+            <div className="hero-title">
+              Ready for<br />today, {focusName.split(" ")[0]}?
+            </div>
+            <span className="streak-chip">🔥 {engage.streak || 1}-day streak</span>
+          </div>
+          <div className="mascot">
+            <div className="mascot-body">
+              <div className="eye l" />
+              <div className="eye r" />
+              <div className="blush l" />
+              <div className="blush r" />
+              <div className="smile" />
+            </div>
+          </div>
+        </div>
+      )}
 
       {isAdmin && (
         <>
@@ -520,33 +538,53 @@ export default function HomePage() {
             </Link>
           ) : null}
 
-          <section className="quick-grid">
-            {(
-              [
-                ...(showBus
-                  ? [{ icon: Bus, label: "Bus", href: "/bus", tone: "blue" as const }]
-                  : []),
-                ...(showCirculars
-                  ? [{ icon: Megaphone, label: "Notices", href: "/circulars", tone: "orange" as const }]
-                  : []),
-                ...(showAttendance
-                  ? [{ icon: CalendarCheck, label: "Attend", href: "/attendance", tone: "green" as const }]
-                  : []),
-                ...(showNotifications
-                  ? [{ icon: Bell, label: "Alerts", href: "/notifications", tone: "slate" as const }]
-                  : []),
-                ...(showFees
-                  ? [{ icon: Wallet, label: "Fees", href: "/fees", tone: "green" as const }]
-                  : []),
-                { icon: FileText, label: "Report", href: "/report", tone: "teal" as const },
-              ] as const
-            ).map(({ icon, label, href, tone }) => (
-              <Link key={label} href={href} className="quick-btn">
-                <AppIcon icon={icon} tone={tone} size={18} />
-                <span className="text-11 font-medium">{label}</span>
+          <div className="section-title mt-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>Quick access</span>
+          </div>
+          <div className="quick-row">
+            {showBus && (
+              <Link href="/bus" className="quick-pill">
+                <div className="qicon" style={{ background: "var(--info-soft)" }}>
+                  <Bus size={22} style={{ color: "var(--info)" }} />
+                </div>
+                <span>Bus</span>
               </Link>
-            ))}
-          </section>
+            )}
+            <Link href={isTeacher ? "/class" : "/attendance"} className="quick-pill">
+              <div className="qicon" style={{ background: "var(--accent-soft)" }}>
+                <CalendarCheck size={22} style={{ color: "var(--accent-dark)" }} />
+              </div>
+              <span>{isTeacher ? "Class" : "Attend"}</span>
+            </Link>
+            {showCirculars && (
+              <Link href="/circulars" className="quick-pill">
+                <div className="qicon" style={{ background: "var(--success-soft)" }}>
+                  <Megaphone size={22} style={{ color: "var(--success)" }} />
+                </div>
+                <span>Notices</span>
+              </Link>
+            )}
+            <Link href="/ai" className="quick-pill">
+              <div className="qicon" style={{ background: "var(--primary-soft)" }}>
+                <Sparkles size={22} style={{ color: "var(--primary)" }} />
+              </div>
+              <span>AI Buddy</span>
+            </Link>
+            {showFees && (
+              <Link href="/fees" className="quick-pill">
+                <div className="qicon" style={{ background: "var(--warning-soft)" }}>
+                  <Wallet size={22} style={{ color: "var(--warning)" }} />
+                </div>
+                <span>Fees</span>
+              </Link>
+            )}
+            <Link href="/report" className="quick-pill">
+              <div className="qicon" style={{ background: "var(--surface-tint)" }}>
+                <FileText size={22} style={{ color: "var(--primary)" }} />
+              </div>
+              <span>Report</span>
+            </Link>
+          </div>
 
           <h2 className="section-label">
             {studentSurface ? "Your day" : "Today at a glance"}
@@ -765,26 +803,40 @@ function FeedItem({
   badge?: { label: string; className: string };
   href?: string;
 }) {
+  const borderTone = tone.includes("warning") || tone.includes("amber") || tone.includes("orange")
+    ? "orange"
+    : tone.includes("success") || tone.includes("green")
+      ? "green"
+      : "";
+
+  const iconBg = borderTone === "orange"
+    ? "var(--accent-soft)"
+    : borderTone === "green"
+      ? "var(--success-soft)"
+      : "var(--info-soft)";
+
   const content = (
-    <>
-      <AppIcon icon={icon} tone={toneFromClass(tone)} size={20} />
-      <div className="grow">
-        <p className="font-semibold truncate" style={{ margin: 0, fontSize: 13 }}>{title}</p>
-        <p className="text-11 muted truncate" style={{ margin: "2px 0 0" }}>{meta}</p>
+    <div className={`feed-item ${borderTone}`}>
+      <div className="feed-icon" style={{ background: iconBg }}>
+        <AppIcon icon={icon} tone={toneFromClass(tone)} size={18} />
+      </div>
+      <div className="grow" style={{ minWidth: 0 }}>
+        <p className="feed-title truncate" style={{ margin: 0 }}>{title}</p>
+        <p className="feed-sub truncate" style={{ margin: "2px 0 0" }}>{meta}</p>
       </div>
       {badge && <span className={badge.className}>{badge.label}</span>}
-      <ArrowRight size={14} className="muted" style={{ opacity: 0.5, flexShrink: 0 }} />
-    </>
+      <ArrowRight size={14} className="feed-time" style={{ opacity: 0.6 }} />
+    </div>
   );
 
   return (
     <li style={{ listStyle: "none", marginBottom: 8 }}>
       {href ? (
-        <Link href={href} className="feed-item-card">
+        <Link href={href} style={{ textDecoration: "none" }}>
           {content}
         </Link>
       ) : (
-        <div className="feed-item-card">{content}</div>
+        content
       )}
     </li>
   );

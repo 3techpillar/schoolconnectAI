@@ -194,14 +194,14 @@ export function PhoneShell({
                       fontWeight: 800,
                       background: isPrimary
                         ? "rgba(255, 255, 255, 0.25)"
-                        : "linear-gradient(135deg, #dbeafe, #eff6ff)",
+                        : "var(--primary-soft)",
                       color: isPrimary ? "#ffffff" : "var(--primary)",
                       border: isPrimary
                         ? "1.5px solid rgba(255, 255, 255, 0.4)"
-                        : "1.5px solid rgba(37, 99, 235, 0.25)",
+                        : "1.5px solid rgba(124, 92, 252, 0.3)",
                       boxShadow: isPrimary
                         ? "0 2px 8px rgba(0, 0, 0, 0.1)"
-                        : "0 2px 6px rgba(37, 99, 235, 0.12)",
+                        : "0 2px 6px rgba(124, 92, 252, 0.15)",
                     }}
                   >
                     {(user.name || "?").charAt(0).toUpperCase()}
