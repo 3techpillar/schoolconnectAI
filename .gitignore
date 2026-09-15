@@ -30,13 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# env / local
-.env
-.env.*
+# env / local — ignore all env files with secrets
+.env*
 *.local
-.env*.local
 
-# keep shared env templates tracked
+# keep only safe templates tracked
 !.env.example
 !.env.sample
 
