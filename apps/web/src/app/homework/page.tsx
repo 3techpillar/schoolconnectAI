@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Image from "next/image";
 import { PhoneShell } from "@/components/shell/PhoneShell";
 import { useAuth } from "@/lib/providers/auth";
 import {
@@ -16,9 +17,18 @@ import {
   AlertTriangle,
   Plus,
   BookOpen,
+  Sparkles,
 } from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 import { addDaysIso, formatDueLabel, isDueOverdue, toIsoDate } from "@/lib/shared/dates";
+import { AskBuddyModal } from "@/components/student/AskBuddyModal";
+
+const SUBJECT_ICON_MAP: Record<string, string> = {
+  Math: "/assets/icons/icon_math_3d.jpg",
+  Science: "/assets/icons/icon_science_3d.jpg",
+  English: "/assets/icons/icon_english_3d.jpg",
+  Hindi: "/assets/icons/icon_hindi_3d.jpg",
+};
 
 export default function HomeworkPage() {
   const { user } = useAuth();
@@ -29,7 +39,7 @@ export default function HomeworkPage() {
     canPostAsTeacher,
     ready,
   } = useSchoolData();
-  const { completeMission, awardXp } = useStudentEngage();
+  const { completeMission, awardXp, streak, xp, level } = useStudentEngage();
 
   const [filter, setFilter] = useState("All");
   const [showForm, setShowForm] = useState(false);
@@ -37,8 +47,17 @@ export default function HomeworkPage() {
   const [title, setTitle] = useState("");
   const [dueDate, setDueDate] = useState(addDaysIso(toIsoDate(), 2));
   const [priority, setPriority] = useState<HomeworkPriority>("medium");
+  const [isBuddyOpen, setIsBuddyOpen] = useState(false);
+  const [buddyPrompt, setBuddyPrompt] = useState<string | undefined>(undefined);
+  const [xpToast, setXpToast] = useState<string | null>(null);
 
   const teacher = canPostAsTeacher(user);
+  const firstName = user?.childName?.split(" ")[0] || user?.name?.split(" ")[0] || "Student";
+
+  const triggerToast = (msg: string) => {
+    setXpToast(msg);
+    setTimeout(() => setXpToast(null), 3200);
+  };
 
   const filtered = useMemo(() => {
     if (filter === "All") return homework;
@@ -56,7 +75,16 @@ export default function HomeworkPage() {
     };
   }, [homework]);
 
-  const subjects = ["All", "Math", "Science", "English", "Hindi"];
+  const totalQuests = homework.length;
+  const completedPercent = totalQuests > 0 ? Math.round((counts.done / totalQuests) * 100) : 100;
+
+  const subjects = [
+    { label: "All", icon: "📚" },
+    { label: "Math", icon: "/assets/icons/icon_math_3d.jpg" },
+    { label: "Science", icon: "/assets/icons/icon_science_3d.jpg" },
+    { label: "English", icon: "/assets/icons/icon_english_3d.jpg" },
+    { label: "Hindi", icon: "/assets/icons/icon_hindi_3d.jpg" },
+  ];
 
   const onCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -92,14 +120,21 @@ export default function HomeworkPage() {
     updateHomeworkStatus(id, next, user);
     if (next === "in-progress" || next === "submitted") {
       completeMission("mission-homework");
-      awardXp(next === "submitted" ? 20 : 10);
+      const pts = next === "submitted" ? 20 : 10;
+      awardXp(pts);
+      triggerToast(`✨ +${pts} XP! Quest ${next === "submitted" ? "Submitted" : "Started"}`);
     }
+  };
+
+  const handleAskBuddy = (hwTitle: string, hwSubject: string) => {
+    setBuddyPrompt(`Can you help me understand and solve my ${hwSubject} assignment: "${hwTitle}"?`);
+    setIsBuddyOpen(true);
   };
 
   if (!ready) {
     return (
       <PhoneShell title="Homework" subtitle="Assignments">
-        <LoadingBlock label="Loading homework…" />
+        <LoadingBlock label="Loading homework quests…" />
       </PhoneShell>
     );
   }
@@ -110,49 +145,104 @@ export default function HomeworkPage() {
       title="Homework"
       headerAccent="plain"
     >
-      {/* 4-KPI Row */}
-      <div className="kpi-row mt-2">
-        <div className="kpi">
-          <div className="n" style={{ color: "var(--warning)" }}>{counts.pending}</div>
-          <div className="l">Pending</div>
+      {/* 3D Student Quest Hero Banner */}
+      <section className="hw-student-hero mt-1">
+        <div className="hw-student-banner-wrap">
+          <Image
+            src="/assets/homework/homework_quest_hero.jpg"
+            alt="Homework Quest Study Room"
+            width={720}
+            height={405}
+            priority
+            className="hw-student-banner-img"
+          />
+          <div className="hw-student-banner-overlay">
+            <span className="hw-hero-kicker">
+              ✨ Daily Quests Hub
+            </span>
+            <h2 className="hw-hero-title">
+              Ready for today&apos;s missions, {firstName}? 🚀
+            </h2>
+            <p className="hw-hero-desc">
+              {counts.pending > 0
+                ? `${counts.pending} quests waiting · Earn +20 XP per submitted task!`
+                : "All assignments up to date! Great job keeping the streak alive!"}
+            </p>
+          </div>
         </div>
-        <div className="kpi">
-          <div className="n" style={{ color: "var(--info)" }}>{counts.progress}</div>
-          <div className="l">In progress</div>
+      </section>
+
+      {/* Gamified Streak & Daily Quest Progress Dock */}
+      <div className="hw-progress-dock">
+        <div className="hw-progress-header">
+          <span className="hw-progress-label">
+            Today&apos;s Quest Progress 🎯
+          </span>
+          <span className="hw-progress-stat">
+            {counts.done}/{totalQuests} Completed ({completedPercent}%)
+          </span>
         </div>
-        <div className="kpi">
-          <div className="n" style={{ color: "var(--success)" }}>{counts.done}</div>
-          <div className="l">Done</div>
+        <div className="hw-progress-track">
+          <div
+            className="hw-progress-fill"
+            style={{ width: `${completedPercent}%` }}
+          />
         </div>
-        <div className="kpi">
-          <div className="n" style={{ color: "var(--danger)" }}>{counts.overdue}</div>
-          <div className="l">Overdue</div>
+        <div className="pwa-game-stats-row mt-2" style={{ justifyContent: "space-between" }}>
+          <div className="game-pill streak-pill-glow" style={{ padding: "0.35rem 0.75rem" }}>
+            <span className="streak-flame">🔥</span>
+            <span className="font-bold text-xs">{streak || 7}d Streak</span>
+          </div>
+          <div className="game-pill xp-pill-glow" style={{ padding: "0.35rem 0.75rem" }}>
+            <span className="xp-star">⭐</span>
+            <span className="font-bold text-xs">{(xp || 1250).toLocaleString()} XP</span>
+          </div>
+          <div className="game-pill level-pill-glow" style={{ padding: "0.35rem 0.75rem" }}>
+            <span className="font-bold text-xs">Lv {level || 7}</span>
+          </div>
         </div>
       </div>
 
-      {/* Subject Filter Bar */}
-      <div className="row mt-4" style={{ justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-        <div className="chip-row" style={{ flex: 1, paddingBottom: 2 }}>
-          {subjects.map((t) => (
-            <button
-              key={t}
-              type="button"
-              className={`chip ${filter === t ? "active" : ""}`}
-              onClick={() => setFilter(t)}
-            >
-              {t}
-            </button>
-          ))}
+      {/* 3D Subject Filter Tabs */}
+      <div className="row" style={{ justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <div className="hw-subject-scroll">
+          {subjects.map((s) => {
+            const isActive = filter === s.label;
+            const isImageIcon = s.icon.startsWith("/");
+            return (
+              <button
+                key={s.label}
+                type="button"
+                className={`hw-subject-pill-btn ${isActive ? "active" : ""}`}
+                onClick={() => setFilter(s.label)}
+              >
+                <span className="hw-subject-icon-box">
+                  {isImageIcon ? (
+                    <Image
+                      src={s.icon}
+                      alt={s.label}
+                      width={24}
+                      height={24}
+                    />
+                  ) : (
+                    <span>{s.icon}</span>
+                  )}
+                </span>
+                <span>{s.label}</span>
+              </button>
+            );
+          })}
         </div>
         {teacher && (
           <button
             type="button"
             className="icon-btn"
             style={{
-              background: showForm ? "var(--blue-tint)" : "var(--surface)",
+              background: showForm ? "var(--primary-soft)" : "var(--surface)",
               border: "1px solid var(--border)",
               color: "var(--primary)",
               flexShrink: 0,
+              marginBottom: 10,
             }}
             aria-label="Add homework"
             onClick={() => setShowForm((v) => !v)}
@@ -164,7 +254,7 @@ export default function HomeworkPage() {
 
       {/* Teacher Post Drawer */}
       {teacher && showForm && (
-        <form className="card card-pad mt-3 space-y" onSubmit={onCreate} style={{ borderColor: "rgba(37, 99, 235, 0.3)" }}>
+        <form className="card card-pad mb-3 space-y" onSubmit={onCreate} style={{ borderColor: "rgba(99, 102, 241, 0.4)", borderRadius: 18 }}>
           <div className="row" style={{ justifyContent: "space-between" }}>
             <p className="font-semibold text-sm" style={{ margin: 0 }}>
               Assign Class Homework
@@ -188,9 +278,9 @@ export default function HomeworkPage() {
               value={priority}
               onChange={(e) => setPriority(e.target.value as HomeworkPriority)}
             >
-              <option value="high">High priority</option>
-              <option value="medium">Medium priority</option>
-              <option value="low">Low priority</option>
+              <option value="high">🔥 Boss Quest (High)</option>
+              <option value="medium">⚡ Daily Quest (Medium)</option>
+              <option value="low">🌱 Practice (Low)</option>
             </select>
           </div>
           <input
@@ -217,85 +307,143 @@ export default function HomeworkPage() {
         </form>
       )}
 
-      {/* Homework Cards List */}
-      <ul className="hw-container">
+      {/* 3D Homework Quest Cards List */}
+      <div>
         {filtered.map((it) => {
           const overdue = isDueOverdue(it.dueDate, it.status);
           const isDone = it.status === "submitted" || it.status === "reviewed";
+          const isInProgress = it.status === "in-progress";
+          const subjectIcon = SUBJECT_ICON_MAP[it.subject] || "/assets/icons/icon_homework_3d.jpg";
+
           return (
-            <li key={it.id} className={`hw-card ${overdue ? "is-overdue" : ""} ${isDone ? "is-submitted" : ""}`}>
-              <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              key={it.id}
+              className={`hw-quest-card-3d ${isDone ? "completed-quest" : ""} ${overdue ? "overdue-quest" : ""}`}
+            >
+              <div className="hw-quest-top-row">
+                <div className="hw-quest-subject-badge">
+                  <div className="hw-subject-icon-box" style={{ width: 20, height: 20 }}>
+                    <Image
+                      src={subjectIcon}
+                      alt={it.subject}
+                      width={20}
+                      height={20}
+                    />
+                  </div>
+                  <span>{it.subject}</span>
+                </div>
                 <div className="row" style={{ gap: 6, alignItems: "center" }}>
-                  <span className={`hw-subject-tag hw-subject-${it.subject}`}>
-                    {it.subject}
-                  </span>
                   <span className={`hw-priority-pill hw-priority-${it.priority}`}>
-                    {it.priority}
+                    {it.priority === "high" ? "🔥 Boss Quest" : it.priority === "medium" ? "⚡ Daily" : "🌱 Practice"}
+                  </span>
+                  <span className="hw-quest-xp-bounty">
+                    ⭐ +20 XP
                   </span>
                 </div>
-                <span
-                  className={`text-11 ${overdue ? "tone-destructive font-semibold" : "muted"}`}
-                  style={{
-                    display: "inline-flex",
-                    gap: 4,
-                    alignItems: "center",
-                  }}
-                >
-                  <Clock size={12} />
-                  {overdue ? "Overdue · " : "Due "}
-                  {it.due}
-                </span>
               </div>
 
-              <h3 className="font-semibold text-15 mt-2" style={{ margin: "0.5rem 0 0.25rem", color: "var(--foreground)" }}>
+              <h3 className="hw-quest-title">
                 {it.title}
               </h3>
 
-              <p className="text-11 muted" style={{ margin: "0 0 0.75rem" }}>
-                Class {it.className} · Posted by {it.postedBy}
-              </p>
+              <div className="hw-quest-meta">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                  <Clock size={13} style={{ color: overdue ? "#F43F5E" : "#64748B" }} />
+                  <strong style={{ color: overdue ? "#F43F5E" : "inherit" }}>
+                    {overdue ? "Overdue · " : "Due "} {it.due}
+                  </strong>
+                </span>
+                <span>Class {it.className}</span>
+                <span>Posted by {it.postedBy}</span>
+                {it.attachments > 0 && (
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>
+                    <Paperclip size={12} /> {it.attachments}
+                  </span>
+                )}
+              </div>
 
-              <div className="row" style={{ justifyContent: "space-between", alignItems: "center", borderTop: "1px solid var(--border)", paddingTop: "0.5rem" }}>
-                <div className="row text-xs muted" style={{ gap: "0.75rem", alignItems: "center" }}>
-                  {it.attachments > 0 && (
-                    <span className="row" style={{ gap: 4 }}>
-                      <Paperclip size={13} /> {it.attachments}
-                    </span>
-                  )}
-                  <StatusPill status={it.status} />
-                </div>
+              <div className="hw-quest-actions-row">
+                <button
+                  type="button"
+                  className="hw-solve-ai-btn"
+                  onClick={() => handleAskBuddy(it.title, it.subject)}
+                  title="Ask Buddy AI for hints"
+                >
+                  <Sparkles size={14} /> Ask Buddy AI
+                </button>
+
                 <div className="row" style={{ gap: 8, alignItems: "center" }}>
-                  {it.status !== "submitted" && it.status !== "reviewed" && (
-                    <span style={{ fontSize: 11, color: "var(--ink-soft)", fontWeight: 700 }}>
-                      +20 XP
-                    </span>
-                  )}
+                  <StatusPill status={it.status} />
                   <button
                     type="button"
-                    className="hw-cycle-btn"
+                    className={`hw-submit-quest-btn ${isDone ? "done" : isInProgress ? "in-progress" : "pending"}`}
                     onClick={() => cycleStatus(it.id, it.status)}
                   >
-                    {it.status === "pending"
-                      ? "Start task"
-                      : it.status === "in-progress"
-                        ? "Submit ✓"
-                        : "Completed"}
+                    {it.status === "pending" && "Start Quest ⚔️"}
+                    {it.status === "in-progress" && "Submit Quest 🚀"}
+                    {isDone && "Done ✓"}
                   </button>
                 </div>
               </div>
-            </li>
+            </div>
           );
         })}
-      </ul>
+      </div>
 
-      {filtered.length === 0 ? (
+      {/* "All Quests Cleared" 3D Celebration State */}
+      {filtered.length === 0 && counts.pending === 0 ? (
+        <div className="hw-victory-card-3d">
+          <div className="hw-victory-avatar-wrap">
+            <Image
+              src="/assets/homework/homework_all_done.jpg"
+              alt="Homework Champion"
+              width={140}
+              height={140}
+            />
+          </div>
+          <h3 className="hw-victory-title">All Quests Cleared! 🏆</h3>
+          <p className="hw-victory-desc">
+            Awesome job! You&apos;ve completed all homework missions for now. Relax and celebrate your XP gains!
+          </p>
+          <button
+            type="button"
+            className="btn-primary"
+            style={{ display: "inline-flex", width: "auto", margin: "0 auto", padding: "0.5rem 1.25rem" }}
+            onClick={() => setFilter("All")}
+          >
+            Review All Homework
+          </button>
+        </div>
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={BookOpen}
           tone="blue"
-          title="No homework in this filter"
-          body="Try another subject, or check back after your teacher posts."
+          title={`No ${filter} homework`}
+          body="Try another subject filter or check back later."
         />
       ) : null}
+
+      {/* Interactive AI Study Buddy Modal */}
+      <AskBuddyModal
+        isOpen={isBuddyOpen}
+        onClose={() => {
+          setIsBuddyOpen(false);
+          setBuddyPrompt(undefined);
+        }}
+        studentName={firstName}
+        initialQuery={buddyPrompt}
+        onRewardXp={(amount) => {
+          awardXp(amount);
+          triggerToast(`✨ +${amount} XP for studying with Buddy!`);
+        }}
+      />
+
+      {/* Floating XP Reward Toast */}
+      {xpToast && (
+        <div className="adventure-xp-toast" role="status">
+          <span>{xpToast}</span>
+        </div>
+      )}
     </PhoneShell>
   );
 }
@@ -303,21 +451,21 @@ export default function HomeworkPage() {
 function StatusPill({ status }: { status: string }) {
   if (status === "submitted" || status === "reviewed") {
     return (
-      <span className="row tone-success font-medium" style={{ gap: 4 }}>
-        <CheckCircle2 size={13} /> {status === "reviewed" ? "Reviewed" : "Submitted"}
+      <span className="row tone-success font-semibold text-xs" style={{ gap: 4 }}>
+        <CheckCircle2 size={14} /> {status === "reviewed" ? "Reviewed" : "Submitted"}
       </span>
     );
   }
   if (status === "in-progress") {
     return (
-      <span className="row tone-info font-medium" style={{ gap: 4 }}>
-        <Clock size={13} /> In progress
+      <span className="row tone-info font-semibold text-xs" style={{ gap: 4 }}>
+        <Clock size={14} /> In progress
       </span>
     );
   }
   return (
-    <span className="row tone-warning font-medium" style={{ gap: 4 }}>
-      <AlertTriangle size={13} /> Pending
+    <span className="row tone-warning font-semibold text-xs" style={{ gap: 4 }}>
+      <AlertTriangle size={14} /> Pending
     </span>
   );
 }
