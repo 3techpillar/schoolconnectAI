@@ -58,7 +58,7 @@ async function loadRoutes() {
     if (!relPath.startsWith("/")) relPath = "/" + relPath;
 
     // Convert Next.js [id] syntax to Express :id syntax
-    const expressPath = "/api" + relPath.replace(/\[([^\]]+)\]/g, ":$1");
+    const expressPath = relPath.replace(/\[([^\]]+)\]/g, ":$1");
     
     try {
       // Must use pathToFileURL for dynamic imports of absolute Windows paths
