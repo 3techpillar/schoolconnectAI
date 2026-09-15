@@ -29,6 +29,7 @@ async function patchHandler(req: Request) {
     busAlert10?: boolean;
     busAlert5?: boolean;
     parentAccess?: "guardian" | "student";
+    pushToken?: string;
   };
 
   if (body.name?.trim()) user.name = body.name.trim();
@@ -44,6 +45,13 @@ async function patchHandler(req: Request) {
   if (typeof body.busAlert5 === "boolean") user.busAlert5 = body.busAlert5;
 
   await user.save();
+
+  if (body.pushToken?.trim()) {
+    await User.collection.updateOne(
+      { _id: user._id },
+      { $addToSet: { pushTokens: body.pushToken.trim() } }
+    );
+  }
 
   if (user.role === "parent" && (body.parentAccess === "guardian" || body.parentAccess === "student")) {
     await User.collection.updateOne(

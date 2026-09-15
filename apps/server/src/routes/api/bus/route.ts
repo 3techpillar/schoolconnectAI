@@ -3,6 +3,8 @@ import {
   ensureBusState,
   busStateToClient,
 } from "@/lib/server/services/bus-service";
+import { User } from "@/lib/models/core/User";
+import { sendPushNotification } from "@/lib/server/services/notification-service";
 import { jsonError, jsonOk } from "@/lib/server/auth";
 import { requireUser, withApiHandler } from "@/lib/server/http";
 import { canWriteBusProgress } from "@/lib/shared/roles";
@@ -72,9 +74,31 @@ async function patchHandler(req: Request) {
   }
 
   if (body.fired) {
+    const tenFiredNow = body.fired.ten && !doc.alertTen;
+    const fiveFiredNow = body.fired.five && !doc.alertFive;
+
     doc.alertDay = body.fired.day;
     doc.alertTen = body.fired.ten;
     doc.alertFive = body.fired.five;
+
+    if (tenFiredNow || fiveFiredNow) {
+       const mins = tenFiredNow ? 10 : 5;
+       const alertProp = tenFiredNow ? "busAlert10" : "busAlert5";
+       User.find({
+         schoolId: user.schoolId,
+         busRouteId: routeId,
+         [alertProp]: true
+       }).select("_id").then(users => {
+         if (users.length > 0) {
+           sendPushNotification(
+             users.map(u => String(u._id)),
+             "Bus ETA Alert",
+             `The school bus is approximately ${mins} minutes away!`,
+             { routeId }
+           ).catch(err => console.error("Bus push failed:", err));
+         }
+       }).catch(console.error);
+    }
   }
   doc.updatedAtMs = Date.now();
   await doc.save();

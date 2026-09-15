@@ -4,6 +4,7 @@ import {
   applyApprovedLeaveToAttendance,
   clearLeaveAttendanceMarks,
 } from "@/lib/server/services/leave-attendance";
+import { sendPushNotification } from "@/lib/server/services/notification-service";
 import { requireUser } from "@/lib/server/http";
 import mongoose from "mongoose";
 
@@ -56,6 +57,15 @@ export async function PATCH(
     attendanceSync = await applyApprovedLeaveToAttendance(leave);
   } else if (body.status === "rejected") {
     attendanceSync = await clearLeaveAttendanceMarks(leave);
+  }
+
+  if (leave.applicantId) {
+    sendPushNotification(
+      [leave.applicantId],
+      `Leave ${body.status === "approved" ? "Approved" : "Rejected"}`,
+      `Your leave request for ${leave.studentName} has been ${body.status}.`,
+      { leaveId: String(leave._id) }
+    ).catch(err => console.error("Failed to send leave push:", err));
   }
 
   return jsonOk({
