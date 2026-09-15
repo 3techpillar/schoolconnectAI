@@ -72,7 +72,8 @@ SchoolConnect is built as a modern **"Monorepo"** (one project folder containing
 ```text
 schoolconnectAI/
 ├── apps/
-│   ├── web/        ← The Website, Web Phone App, Desktop ERP, and Backend Server
+│   ├── server/     ← The Backend API Server (Express + MongoDB)
+│   ├── web/        ← The Frontend UI (Website, Web Phone App, Desktop ERP)
 │   └── mobile/     ← The Native Mobile App (React Native) for Android & iOS
 ├── packages/
 │   └── shared/     ← Common rules, roles, data types, and helpers shared by both
@@ -81,7 +82,8 @@ schoolconnectAI/
 ```
 
 ### The Technology Used:
-- **Next.js 15 & React 19:** Powers both the web app and the backend API server.
+- **Next.js 15 & React 19:** Powers the web frontend UI.
+- **Express.js:** Powers the backend API server (`apps/server`).
 - **MongoDB & Mongoose:** The database that stores all school records safely.
 - **React Native 0.76:** Powers the mobile app for Android and iOS.
 - **TypeScript:** Ensures code quality and prevents errors.

@@ -8,25 +8,28 @@
   "scripts": {
     "dev": "npm run dev -w @schoolconnect/web",
     "dev:web": "npm run dev -w @schoolconnect/web",
+    "dev:server": "npm run dev -w @schoolconnect/server",
     "dev:staging": "npm run dev:staging -w @schoolconnect/web",
     "dev:mobile": "npm run start -w @schoolconnect/mobile",
     "android": "npm run android -w @schoolconnect/mobile",
     "ios": "npm run ios -w @schoolconnect/mobile",
     "build": "npm run build -w @schoolconnect/web",
     "build:web": "npm run build -w @schoolconnect/web",
+    "build:server": "npm run build -w @schoolconnect/server",
     "build:staging": "npm run build:staging -w @schoolconnect/web",
     "build:production": "npm run build:production -w @schoolconnect/web",
     "start": "npm run start -w @schoolconnect/web",
+    "start:server": "npm run start -w @schoolconnect/server",
     "start:staging": "npm run start:staging -w @schoolconnect/web",
     "start:production": "npm run start:production -w @schoolconnect/web",
     "docker:build": "docker build -f deploy/Dockerfile -t schoolconnect:local .",
     "docker:run": "docker run --rm -p 3000:3000 --env-file .env schoolconnect:local",
     "docker:up": "docker compose -f deploy/compose.yml up -d --build",
     "docker:down": "docker compose -f deploy/compose.yml down",
-    "seed": "npm run seed -w @schoolconnect/web",
+    "seed": "npm run seed -w @schoolconnect/server",
     "lint": "npm run lint -w @schoolconnect/web",
     "test": "npm run test -w @schoolconnect/web",
-    "typecheck": "npm run typecheck -w @schoolconnect/shared && npm run typecheck -w @schoolconnect/web && npm run typecheck -w @schoolconnect/mobile"
+    "typecheck": "npm run typecheck -w @schoolconnect/shared && npm run typecheck -w @schoolconnect/server && npm run typecheck -w @schoolconnect/web && npm run typecheck -w @schoolconnect/mobile"
   },
   "engines": {
     "node": ">=20"

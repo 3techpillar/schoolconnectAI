@@ -13,7 +13,7 @@ Hub for product, architecture, and ops. Setup & scripts live in the root **[READ
 | Run locally / seed / **all demo logins** | [../README.md](../README.md#demo-accounts) |
 | See who can do what | [ROLES-AND-FEATURES.md](ROLES-AND-FEATURES.md) |
 | Use desktop `/erp` | [ERP.md](ERP.md) |
-| Understand code layout & `/api/v1` | [ARCHITECTURE.md](ARCHITECTURE.md) · [../apps/web/src/STRUCTURE.md](../apps/web/src/STRUCTURE.md) |
+| Understand code layout & `/api/v1` | [ARCHITECTURE.md](ARCHITECTURE.md) |
 | Look up APIs & Mongo models | [BACKEND.md](BACKEND.md) |
 | Run the React Native app | [MOBILE.md](MOBILE.md) |
 | Deploy on a VPS | [DEPLOY.md](DEPLOY.md) |

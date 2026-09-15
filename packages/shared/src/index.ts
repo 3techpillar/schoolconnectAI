@@ -118,7 +118,27 @@ export type {
   TransferPolicy,
 } from "./product-modes";
 
-export * from "./schemas";
+export {
+  identifierSchema,
+  otpVerifySchema,
+  feesPaySchema,
+  aiChatSchema,
+  engageActionSchema,
+  chatUpsertSchema,
+  chatPostMessageSchema,
+  erpSchoolUpsertSchema,
+  erpTransferCreateSchema,
+  erpTransferReviewSchema,
+  erpStudentUpsertSchema,
+  erpClassUpsertSchema,
+  erpAdmissionPatchSchema,
+  erpSubjectUpsertSchema,
+  erpExamUpsertSchema,
+  erpExamMarkUpsertSchema,
+  erpFeeStructureSchema,
+  erpStaffUpsertSchema,
+} from "./schemas/index";
+export type { EngageAction } from "./schemas/index";
 export { theme } from "./theme";
 export type { Theme } from "./theme";
 

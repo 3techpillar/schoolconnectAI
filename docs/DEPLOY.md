@@ -40,8 +40,8 @@ Set at least:
 
 ```bash
 docker compose -f deploy/compose.yml up -d --build
-docker compose -f deploy/compose.yml logs -f web
-curl -s http://127.0.0.1:3000/api/health
+docker compose -f deploy/compose.yml logs -f web server
+curl -s http://127.0.0.1:4000/api/health
 ```
 
 Expect `"mongo": true` when Atlas/IP/URI are correct.
@@ -69,21 +69,29 @@ docker run -d --name schoolconnect --restart unless-stopped \
 
 ## 5. HTTPS (custom domain)
 
-Put Nginx or Caddy in front; proxy to `127.0.0.1:3000`. Example Nginx location:
+Put Nginx or Caddy in front; proxy traffic to both your frontend (`3000`) and backend (`4000`). Example Nginx config:
 
 ```nginx
+# Route API requests to the Express backend
+location /api/ {
+  proxy_pass http://127.0.0.1:4000;
+  proxy_http_version 1.1;
+  proxy_set_header Host $host;
+  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+
+# Route all other requests to the Next.js frontend
 location / {
   proxy_pass http://127.0.0.1:3000;
   proxy_http_version 1.1;
   proxy_set_header Host $host;
   proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
   proxy_set_header X-Forwarded-Proto $scheme;
-  proxy_set_header Authorization $http_authorization;
-  proxy_pass_header Authorization;
 }
 ```
 
-Open `80`/`443` on the firewall; keep `3000` localhost-only if you proxy.
+Open `80`/`443` on the firewall; keep `3000` and `4000` localhost-only if you proxy.
 
 ## 6. Updates
 
