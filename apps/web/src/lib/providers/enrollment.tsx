@@ -509,9 +509,29 @@ export function EnrollmentProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      const currentList = loadList<StudentEnrollment>(ENROLL_KEY);
+      const row =
+        currentList.find((e) => e.id === id) ||
+        enrollments.find((e) => e.id === id);
+      if (!row) return;
+
+      const users = listUsers();
+      const match =
+        users.find((u) => u.id === row.studentUserId) ||
+        users.find(
+          (u) =>
+            row.identifier &&
+            u.identifier === row.identifier &&
+            u.role === "student",
+        ) ||
+        users.find(
+          (u) =>
+            u.role === "student" &&
+            u.name.toLowerCase() === row.studentName.toLowerCase() &&
+            u.school.toLowerCase() === row.school.toLowerCase(),
+        );
+
       setEnrollments((prev) => {
-        const row = prev.find((e) => e.id === id);
-        if (!row) return prev;
         const next = prev.map((e) =>
           e.id === id
             ? {
@@ -520,41 +540,24 @@ export function EnrollmentProvider({ children }: { children: ReactNode }) {
                 reviewedAt: Date.now(),
                 reviewedByName: actor.name,
                 note: note || e.note,
+                ...(match ? { studentUserId: match.id } : {}),
               }
             : e,
         );
         saveList(ENROLL_KEY, next);
-
-        const users = listUsers();
-        const match =
-          users.find((u) => u.id === row.studentUserId) ||
-          users.find(
-            (u) =>
-              row.identifier &&
-              u.identifier === row.identifier &&
-              u.role === "student",
-          ) ||
-          users.find(
-            (u) =>
-              u.role === "student" &&
-              u.name.toLowerCase() === row.studentName.toLowerCase() &&
-              u.school.toLowerCase() === row.school.toLowerCase(),
-          );
-
-        if (match) {
-          void updateUser(match.id, {
-            enrollmentStatus: status,
-            className: row.className,
-            school: row.school,
-          });
-        }
-        return next.map((e) =>
-          e.id === id && match ? { ...e, studentUserId: match.id } : e,
-        );
+        return next;
       });
+
+      if (match) {
+        await updateUser(match.id, {
+          enrollmentStatus: status,
+          className: row.className,
+          school: row.school,
+        });
+      }
       void refreshUser();
     },
-    [backend, listUsers, updateUser, refreshUser, refreshRemote],
+    [backend, enrollments, listUsers, updateUser, refreshUser, refreshRemote],
   );
 
   const value = useMemo<EnrollmentCtx>(() => {

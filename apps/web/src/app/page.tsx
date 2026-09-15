@@ -223,7 +223,7 @@ export default function HomePage() {
     teacherClass.roster.length - teacherClass.markedCount;
 
   const isStudentUser = Boolean(studentSurface || user?.role === "student");
-  const showAdventure = viewMode === "adventure";
+  const showAdventure = isStudentUser && viewMode === "adventure";
 
   if (showAdventure && user) {
     return (
@@ -241,33 +241,35 @@ export default function HomePage() {
   return (
     <PhoneShell subtitle={subtitle} title={title}>
       <section className="home-hero-card">
-        {/* Switch to Adventure Mode Banner for Admins/Teachers/Parents */}
-        <div style={{ marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setViewMode("adventure")}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0.65rem 0.95rem",
-              borderRadius: "14px",
-              background: "linear-gradient(135deg, #4338CA 0%, #7C3AED 100%)",
-              color: "#ffffff",
-              border: "none",
-              fontWeight: 800,
-              fontSize: "0.82rem",
-              cursor: "pointer",
-              boxShadow: "0 6px 18px -4px rgba(99, 102, 241, 0.4)",
-            }}
-          >
-            <span>🎮 Student Adventure World (Preview)</span>
-            <span style={{ background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 999, fontSize: "0.72rem" }}>
-              Explore 🚀
-            </span>
-          </button>
-        </div>
+        {/* Switch to Adventure Mode Banner - visible only for Student View */}
+        {isStudentUser && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              type="button"
+              onClick={() => setViewMode("adventure")}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.65rem 0.95rem",
+                borderRadius: "14px",
+                background: "linear-gradient(135deg, #4338CA 0%, #7C3AED 100%)",
+                color: "#ffffff",
+                border: "none",
+                fontWeight: 800,
+                fontSize: "0.82rem",
+                cursor: "pointer",
+                boxShadow: "0 6px 18px -4px rgba(99, 102, 241, 0.4)",
+              }}
+            >
+              <span>🎮 Student Adventure World (Preview)</span>
+              <span style={{ background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 999, fontSize: "0.72rem" }}>
+                Explore 🚀
+              </span>
+            </button>
+          </div>
+        )}
 
         <div className="row" style={{ alignItems: "center" }}>
           <div className="avatar" style={{ width: 52, height: 52, borderRadius: 16, fontSize: 18, fontWeight: 800 }}>
