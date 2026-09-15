@@ -4,6 +4,7 @@ import { Homework } from "@/lib/models/comms/Homework";
 import { Notification } from "@/lib/models/comms/Notification";
 import { User, type UserDoc } from "@/lib/models/core/User";
 import { addDaysIso, formatDueLabel, toIsoDate } from "@/lib/shared/dates";
+import { sendPushNotification } from "@/lib/server/services/notification-service";
 import type { Types } from "mongoose";
 
 const RICH_KINDS = new Set(["homework", "daily_activity", "progress"]);
@@ -116,6 +117,15 @@ export async function postChatMessage(user: UserDoc, input: PostChatInput) {
     String(user._id),
     createdAtMs,
   );
+
+  if (updated && updated.unreadBy && updated.unreadBy.length > 0) {
+    sendPushNotification(
+      updated.unreadBy as string[],
+      chat.title || "New Message",
+      input.text.slice(0, 120),
+      { chatSlug: input.chatSlug }
+    ).catch(err => console.error("Failed to send chat push:", err));
+  }
 
   if (RICH_KINDS.has(input.kind)) {
     await Notification.create({

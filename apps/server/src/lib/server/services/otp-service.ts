@@ -1,9 +1,15 @@
 import { OtpChallenge } from "@/lib/models/core/OtpChallenge";
 import {
+  getOtpEmailTemplate,
+  getOtpEmailText,
+  getOtpSmsTemplate,
+} from "@/lib/server/services/message-templates"; // Trigger TS reload
+import {
   generateNumericOtp,
   hashOtpCode,
   otpHashesEqual,
 } from "@/lib/server/hash";
+import nodemailer from "nodemailer";
 
 
 const SEND_COOLDOWN_MS = 30_000;
@@ -86,6 +92,43 @@ export async function issueOtp(identifier: string): Promise<OtpSendResult> {
   });
 
   const demo = isDemoProvider();
+  
+  if (!demo) {
+    if (identifier.includes("@")) {
+      // ----------------------------------------------------
+      // SMTP Email Dispatch (using nodemailer)
+      // ----------------------------------------------------
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || "587"),
+        secure: process.env.SMTP_PORT === "465", // true for 465, false for other ports
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+      await transporter.sendMail({
+        from: '"SchoolConnect" <no-reply@schoolconnect.example.com>',
+        to: identifier,
+        subject: "Your SchoolConnect Login Code",
+        text: getOtpEmailText(code),
+        html: getOtpEmailTemplate(code),
+      });
+      console.log(`[SMTP MOCK] Sent Email to ${identifier}: OTP is ${code}`);
+    } else {
+      // ----------------------------------------------------
+      // TODO: SMS Dispatch (e.g., using Twilio)
+      // ----------------------------------------------------
+      /*
+      import { Twilio } from "twilio";
+      const client = new Twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
+      await client.messages.create({
+        body: getOtpSmsTemplate(code),
+        to: identifier,
+        from: process.env.TWILIO_PHONE,
+      });
+      */
+      console.log(`[SMS MOCK] Sent SMS to ${identifier}: OTP is ${code}`);
+    }
+  }
+
   return {
     ok: true,
     demo,

@@ -1,6 +1,7 @@
 import { ClassDesk, classDeskToClient } from "@/lib/models/ops/ClassDesk";
 import { Notification, notificationToClient } from "@/lib/models/comms/Notification";
 import { User, type UserDoc } from "@/lib/models/core/User";
+import { sendPushNotification } from "@/lib/server/services/notification-service";
 import type { Types } from "mongoose";
 
 /** Parents/students who should see class circulars as unread. */
@@ -82,6 +83,15 @@ export async function publishCircular(input: {
     createdAtMs: createdAt,
     readBy: [uid],
   });
+
+  if (recipients.length > 0) {
+    sendPushNotification(
+      recipients,
+      `${circular.tag} · ${circular.title}`,
+      circular.body.slice(0, 120),
+      { circularKey: key }
+    ).catch(err => console.error("Failed to send circular push:", err));
+  }
 
   return {
     desk: classDeskToClient(desk, uid),
