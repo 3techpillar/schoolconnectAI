@@ -7424,4 +7424,388 @@ ol {
   animation: shimmerMove 1.4s infinite ease-in-out;
 }
 
+/* ==========================================================================
+   STUDENT-CENTRIC HOME PAGE STYLES (MATCHING ENGAGE CARTOON AESTHETICS)
+   ========================================================================== */
+
+.student-home-hero-card {
+  position: relative;
+  background: linear-gradient(135deg, #4338CA 0%, #6366F1 50%, #8B5CF6 100%);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 16px 36px -8px rgba(79, 70, 229, 0.28);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  margin-top: 0.75rem;
+  color: #ffffff;
+}
+
+.student-home-banner-wrap {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.student-home-banner-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.student-home-hero-card:hover .student-home-banner-img {
+  transform: scale(1.04);
+}
+
+.student-home-banner-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(30, 27, 75, 0.1) 0%,
+    rgba(30, 27, 75, 0.75) 75%,
+    rgba(30, 27, 75, 0.95) 100%
+  );
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.15rem;
+}
+
+.student-hero-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(10px);
+  color: #FDE047;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+  width: fit-content;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.student-hero-greeting {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 800;
+  line-height: 1.2;
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.student-hero-subtitle {
+  font-size: 0.78rem;
+  color: #E0E7FF;
+  margin: 4px 0 0;
+  font-weight: 500;
+}
+
+/* 3D Action Cards Grid */
+.student-3d-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.85rem;
+  margin-top: 1rem;
+}
+
+.student-action-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px solid #E0E7FF;
+  padding: 0.95rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  box-shadow: 0 8px 20px -4px rgba(99, 102, 241, 0.08);
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  text-decoration: none;
+  overflow: hidden;
+}
+
+.student-action-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 14px 28px -6px rgba(99, 102, 241, 0.18);
+  border-color: #818CF8;
+}
+
+.student-action-card:active {
+  transform: scale(0.98);
+}
+
+.student-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.student-icon-3d-wrap {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 6px 14px -3px rgba(0, 0, 0, 0.15);
+  transition: transform 0.25s ease;
+  flex-shrink: 0;
+}
+
+.student-action-card:hover .student-icon-3d-wrap {
+  transform: rotate(-3deg) scale(1.08);
+}
+
+.student-icon-3d-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.student-card-badge {
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badge-amber {
+  background: #FEF3C7;
+  color: #B45309;
+}
+
+.badge-green {
+  background: #DCFCE7;
+  color: #15803D;
+}
+
+.badge-blue {
+  background: #DBEAFE;
+  color: #1D4ED8;
+}
+
+.badge-purple {
+  background: #F3E8FF;
+  color: #7E22CE;
+}
+
+.badge-coral {
+  background: #FFE4E6;
+  color: #BE123C;
+}
+
+.student-card-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1E1B4B;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.student-card-desc {
+  font-size: 0.74rem;
+  color: #64748B;
+  margin: 0;
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.student-card-arrow {
+  color: #6366F1;
+  font-weight: 800;
+  font-size: 0.82rem;
+  transition: transform 0.2s ease;
+}
+
+.student-action-card:hover .student-card-arrow {
+  transform: translateX(3px);
+}
+
+/* Gamified Quest Box on Home */
+.student-home-quests-card {
+  background: #ffffff;
+  border-radius: 22px;
+  border: 1.5px solid #E0E7FF;
+  padding: 1.15rem;
+  box-shadow: 0 10px 26px -6px rgba(99, 102, 241, 0.1);
+  margin-top: 1rem;
+}
+
+.student-quests-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+}
+
+.student-quests-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #1E1B4B;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.student-quests-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  background: #EEF2FF;
+  color: #4F46E5;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+/* Adventure Portal Banner on Home */
+.adventure-portal-banner {
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1E1B4B 0%, #312E81 50%, #4338CA 100%);
+  margin-top: 1rem;
+  border: 1.5px solid #818CF8;
+  box-shadow: 0 12px 30px -8px rgba(99, 102, 241, 0.35);
+  display: flex;
+  align-items: center;
+  padding: 1.15rem;
+  gap: 1rem;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.adventure-portal-banner:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px -6px rgba(99, 102, 241, 0.45);
+  border-color: #A5B4FC;
+}
+
+.adventure-portal-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #F59E0B 0%, #EC4899 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.8rem;
+  box-shadow: 0 8px 18px rgba(245, 158, 11, 0.4);
+  flex-shrink: 0;
+  animation: floatMascot 3s ease-in-out infinite alternate;
+}
+
+.adventure-portal-body {
+  flex: 1;
+}
+
+.adventure-portal-tag {
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #FDE047;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.adventure-portal-title {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 2px 0 0;
+}
+
+.adventure-portal-desc {
+  font-size: 0.74rem;
+  color: #C7D2FE;
+  margin: 3px 0 0;
+}
+
+.adventure-portal-btn {
+  background: #ffffff;
+  color: #4338CA;
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Ask Buddy Instant Card on Home */
+.buddy-instant-card {
+  position: relative;
+  background: linear-gradient(135deg, #EFF6FF 0%, #EEF2FF 100%);
+  border-radius: 20px;
+  border: 1.5px solid #C7D2FE;
+  padding: 1rem;
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.buddy-instant-card:hover {
+  transform: translateY(-2px);
+  border-color: #6366F1;
+  box-shadow: 0 8px 24px -4px rgba(99, 102, 241, 0.15);
+}
+
+.buddy-instant-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.25);
+  flex-shrink: 0;
+}
+
+.buddy-instant-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.buddy-instant-body {
+  flex: 1;
+}
+
+.buddy-instant-title {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #1E1B4B;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.buddy-instant-desc {
+  font-size: 0.74rem;
+  color: #4338CA;
+  margin: 2px 0 0;
+}
+
+.buddy-instant-cta {
+  background: #4F46E5;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 6px 12px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+
 
