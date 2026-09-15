@@ -1,0 +1,81 @@
+name: Deploy Web Frontend
+
+on:
+  push:
+    branches:
+      - web_prod
+
+jobs:
+  # ── Step 1: Build & Test in CI ──
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit Tests
+        run: npm test
+
+      - name: Build Web (production)
+        run: npm run build:production
+
+  # ── Step 2: Deploy to VPS (only if build passes) ──
+  deploy:
+    needs: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          command_timeout: 30m
+
+          script: |
+            set -e
+
+            APP_DIR="/var/www/schoolconnectAI"
+            PM2_NAME="schoolconnect-production"
+
+            echo "═══ Web Frontend Deployment Started ═══"
+
+            cd $APP_DIR
+
+            echo "» Fetching latest code..."
+            git fetch origin web_prod
+
+            echo "» Resetting to latest web_prod..."
+            git reset --hard origin/web_prod
+
+            echo "» Installing dependencies..."
+            npm ci
+
+            echo "» Building production web app..."
+            if npm run build:production; then
+              echo "✓ Build succeeded"
+            else
+              echo "✗ Build FAILED — keeping old version running"
+              exit 1
+            fi
+
+            echo "» Restarting PM2 process..."
+            pm2 restart $PM2_NAME || pm2 start npm --name "$PM2_NAME" -- run start:production
+
+            echo "» Saving PM2 process list..."
+            pm2 save
+
+            echo "═══ Web Frontend Deployment Successful! ═══"

@@ -1,0 +1,81 @@
+name: Deploy Backend Server
+
+on:
+  push:
+    branches:
+      - server_prod
+
+jobs:
+  # ── Step 1: Typecheck in CI ──
+  build-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Typecheck Shared Package
+        run: npm run typecheck -w @schoolconnect/shared
+
+      - name: Typecheck Server
+        run: npm run typecheck -w @schoolconnect/server
+
+      - name: Build Server
+        run: npm run build:server
+
+  # ── Step 2: Deploy to VPS (only if checks pass) ──
+  deploy:
+    needs: build-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          command_timeout: 30m
+
+          script: |
+            set -e
+
+            APP_DIR="/var/www/schoolconnectAI"
+            PM2_NAME="schoolConnect-backend"
+
+            echo "═══ Backend Server Deployment Started ═══"
+
+            cd $APP_DIR
+
+            echo "» Fetching latest code..."
+            git fetch origin server_prod
+
+            echo "» Resetting to latest server_prod..."
+            git reset --hard origin/server_prod
+
+            echo "» Installing dependencies..."
+            npm ci
+
+            echo "» Building server..."
+            if npm run build:server; then
+              echo "✓ Build succeeded"
+            else
+              echo "✗ Build FAILED — keeping old version running"
+              exit 1
+            fi
+
+            echo "» Restarting PM2 process..."
+            pm2 restart $PM2_NAME || pm2 start npm --name "$PM2_NAME" -- run start:server
+
+            echo "» Saving PM2 process list..."
+            pm2 save
+
+            echo "═══ Backend Server Deployment Successful! ═══"
