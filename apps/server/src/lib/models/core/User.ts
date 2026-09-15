@@ -1,4 +1,4 @@
-import mongoose, { Schema, type InferSchemaType, type Model } from "mongoose";
+import mongoose, { Schema, type InferSchemaType, type Model, type HydratedDocument } from "mongoose";
 
 export const USER_ROLES = [
   "parent",
@@ -52,6 +52,7 @@ const UserSchema = new Schema(
     inviteCode: { type: String },
     busRouteId: { type: String, default: "route-12" },
     homeStopId: { type: String, default: "s3" },
+    pushTokens: { type: [String], default: [] },
     busAlert10: { type: Boolean, default: true },
     busAlert5: { type: Boolean, default: true },
     classHistory: [

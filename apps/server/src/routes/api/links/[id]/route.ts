@@ -57,6 +57,4 @@ async function patchHandler(req: Request, ctx: Ctx) {
   return jsonOk({ link: linkToClient(link) });
 }
 
-export async function PATCH(req: Request, ctx: Ctx) {
-  return withApiHandler((r) => patchHandler(r, ctx))(req);
-}
+export const PATCH = withApiHandler(patchHandler as any);

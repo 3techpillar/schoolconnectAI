@@ -137,8 +137,8 @@ export {
   erpExamMarkUpsertSchema,
   erpFeeStructureSchema,
   erpStaffUpsertSchema,
-} from "./schemas/index.ts";
-export type { EngageAction } from "./schemas/index.ts";
+} from "./schemas/index";
+export type { EngageAction } from "./schemas/index";
 export { theme } from "./theme";
 export type { Theme } from "./theme";
 

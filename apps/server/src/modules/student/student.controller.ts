@@ -45,7 +45,7 @@ export const studentController = {
     const denied = assertPermission(user, "student:write");
     if (denied) return denied;
 
-    const body = await req.json();
+    const body = await req.json() as any;
     const scope = tenantSchoolId(user, body.schoolId);
     if (scope.error) return scope.error;
     if (!scope.schoolId) return jsonError("schoolId required", 400);
@@ -71,7 +71,7 @@ export const studentController = {
       return jsonError("Invalid id");
     }
 
-    const body = await req.json();
+    const body = await req.json() as any;
     const scope = tenantSchoolId(user, body.schoolId);
     if (scope.error) return scope.error;
     if (!scope.schoolId) return jsonError("schoolId required", 400);

@@ -16,7 +16,7 @@ export async function requireDb(): Promise<{ error?: Response }> {
 
 export async function requireUser(
   roles?: Role[],
-): Promise<{ error?: Response; session?: SessionPayload; user?: UserDoc }> {
+): Promise<{ error?: Response; session?: SessionPayload; user?: InstanceType<typeof User> }> {
   const db = await requireDb();
   if (db.error) return { error: db.error };
 

@@ -3,7 +3,7 @@ import type { Request as ExpressRequest, Response as ExpressResponse } from "exp
 /**
  * Creates a standard Web Request object from an Express Request.
  */
-export function createWebRequest(req: ExpressRequest): Request {
+export function createWebRequest(req: ExpressRequest, res?: ExpressResponse): Request {
   const protocol = req.protocol || "http";
   const host = req.get("host") || "localhost:4000";
   const url = new URL(req.originalUrl || req.url, `${protocol}://${host}`);
@@ -36,7 +36,9 @@ export function createWebRequest(req: ExpressRequest): Request {
   
   // Attach Express req/res to a custom property for mock access
   (webReq as any)._expressReq = req;
-  (webReq as any)._expressRes = res;
+  if (res) {
+    (webReq as any)._expressRes = res;
+  }
   
   return webReq;
 }
@@ -82,7 +84,7 @@ export function wrapNextRoute(
 
   const wrapper = async (req: ExpressRequest, res: ExpressResponse) => {
     try {
-      const webReq = createWebRequest(req);
+      const webReq = createWebRequest(req, res);
       const context = { params: req.params };
       
       return await asyncLocalStorage.run({ req, res }, async () => {
