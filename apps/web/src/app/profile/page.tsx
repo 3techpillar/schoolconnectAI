@@ -18,7 +18,7 @@ import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
 import { ParentLinksPanel } from "@/components/ParentLinksPanel";
 
 export default function ProfilePage() {
-  const { user, updateUser, refreshUser, logout } = useAuth();
+  const { user, updateUser, refreshUser, logout, changePassword } = useAuth();
   const router = useRouter();
   const { ready, applyLeave, myLeaves, leaves, approvedLeaveDates } = useLeaves();
   const { getStaffMonthStatusMap, getStaffMonthStats } = useStaffAttendance();
@@ -29,6 +29,10 @@ export default function ProfilePage() {
   const [studentName, setStudentName] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
   const [accountFlash, setAccountFlash] = useState<string | null>(null);
+
+  const [oldPass, setOldPass] = useState("");
+  const [newPass, setNewPass] = useState("");
+  const [passFlash, setPassFlash] = useState<string | null>(null);
 
   const [name, setName] = useState("");
   const [school, setSchool] = useState("");
@@ -388,6 +392,67 @@ export default function ProfilePage() {
         <button type="submit" className="btn-primary">
           Save account
         </button>
+      </form>
+
+      {/* Security & Active Sessions */}
+      <form
+        className="card card-pad mt-4 space-y"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const res = await changePassword(oldPass, newPass);
+          setPassFlash(res.message);
+          if (res.ok) {
+            setOldPass("");
+            setNewPass("");
+          }
+        }}
+      >
+        <div>
+          <p className="font-semibold text-sm row" style={{ margin: 0, gap: 6 }}>
+            <ShieldCheck size={16} className="tone-primary" /> Security & Password
+          </p>
+          <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+            Update your login credentials and view session status.
+          </p>
+        </div>
+
+        <div className="wa-meta-row">
+          <label className="grow">
+            <span className="text-xs font-medium muted">Current password</span>
+            <input
+              type="password"
+              className="input"
+              value={oldPass}
+              onChange={(e) => setOldPass(e.target.value)}
+              placeholder="••••••••"
+            />
+          </label>
+          <label className="grow">
+            <span className="text-xs font-medium muted">New password</span>
+            <input
+              type="password"
+              className="input"
+              value={newPass}
+              onChange={(e) => setNewPass(e.target.value)}
+              placeholder="Min 6 characters"
+            />
+          </label>
+        </div>
+
+        {passFlash && (
+          <p className="text-11 tone-info row" style={{ gap: 6, margin: 0 }}>
+            <ShieldCheck size={14} /> {passFlash}
+          </p>
+        )}
+
+        <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <span className="text-11 muted">
+            Active session: <strong>Active Device</strong> · SSL Encrypted
+          </span>
+          <button type="submit" className="btn-secondary" style={{ width: "auto" }}>
+            Update Password
+          </button>
+        </div>
       </form>
 
       {user.role === "parent" && (

@@ -27,6 +27,9 @@ import {
 import { AppIcon, type AppIconTone } from "@/components/shell/AppIcon";
 import { LoadingBlock } from "@/components/shell/StatusUI";
 
+import { canAccessRoute } from "@/lib/shared/route-guards";
+import { ROLE_LABEL } from "@schoolconnect/shared";
+
 interface Props {
   children: ReactNode;
   title?: string;
@@ -58,6 +61,8 @@ export function PhoneShell({
   const isPrimary = headerAccent === "primary";
   const { user, ready, backend } = useAuth();
   const { unreadNotifications, unreadChats, canPostAsTeacher } = useSchoolData();
+
+  const isAllowed = canAccessRoute(user?.role, pathname);
 
   const isFamily = isFamilyRole(user?.role);
   const isTeacher = user?.role === "class_teacher";
@@ -255,11 +260,49 @@ export function PhoneShell({
         </header>
       )}
 
-      <main
-        className={`page-main page-x ${showHeader ? "" : "safe-top"} ${hideNav ? "page-main-flush" : ""}`}
-      >
-        {children}
-      </main>
+      {!isAllowed ? (
+        <main className="page-main page-x">
+          <div className="card card-pad mt-6 text-center space-y" style={{ padding: "2.5rem 1.5rem" }}>
+            <div
+              className="mx-auto row"
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background: "var(--danger-soft)",
+                color: "var(--danger)",
+                fontSize: 24,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              🔒
+            </div>
+            <div>
+              <h2 className="font-bold text-lg" style={{ margin: "12px 0 4px" }}>
+                403 — Access Restricted
+              </h2>
+              <p className="text-xs muted" style={{ margin: 0 }}>
+                Your account role (<strong>{ROLE_LABEL[user.role] || user.role}</strong>) does not have permission to view <code>{pathname}</code>.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary mt-4"
+              style={{ margin: "1rem auto 0", maxWidth: 200 }}
+              onClick={() => router.push("/")}
+            >
+              Back to Safety
+            </button>
+          </div>
+        </main>
+      ) : (
+        <main
+          className={`page-main page-x ${showHeader ? "" : "safe-top"} ${hideNav ? "page-main-flush" : ""}`}
+        >
+          {children}
+        </main>
+      )}
 
       {!hideNav && (
         <nav className="bottom-nav">
