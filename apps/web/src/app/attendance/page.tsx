@@ -6,6 +6,7 @@ import { PhoneShell } from "@/components/shell/PhoneShell";
 import { useAuth } from "@/lib/providers/auth";
 import { useSchoolData } from "@/lib/providers/school-data";
 import { useTeacherClass, type AttendMark } from "@/lib/providers/teacher-class";
+import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import {
   formatLeaveRange,
   useLeaves,
@@ -32,7 +33,6 @@ export default function AttendancePage() {
   } = useTeacherClass();
   const {
     ready: leavesReady,
-    pendingLeaves,
     pendingStudentLeaves,
     reviewLeave,
     approvedLeaveDates,
@@ -40,7 +40,13 @@ export default function AttendancePage() {
     leaves,
     applyLeave,
   } = useLeaves();
+  const {
+    ready: staffReady,
+    getStaffMonthStatusMap,
+    getStaffMonthStats,
+  } = useStaffAttendance();
 
+  const [activeTab, setActiveTab] = useState<"class" | "personal">("class");
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [fromDate, setFromDate] = useState(toIsoDate());
   const [toDate, setToDate] = useState(toIsoDate());
@@ -54,25 +60,9 @@ export default function AttendancePage() {
     }
   }, [user]);
 
-  const onApply = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!reason.trim() || !fromDate || !toDate || !user) return;
-    const who =
-      studentName.trim() ||
-      user.childName ||
-      (user.role === "student" ? user.name : user.name);
-    applyLeave({
-      user,
-      studentName: who,
-      fromDate,
-      toDate: toDate < fromDate ? fromDate : toDate,
-      reason,
-    });
-    setReason("");
-    setFlash("Leave submitted — waiting for teacher / admin approval.");
-  };
-
   const teacher = canPostAsTeacher(user);
+  const isStaff = Boolean(user && user.role !== "student" && user.role !== "parent");
+
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth(); // 0-indexed
@@ -83,11 +73,34 @@ export default function AttendancePage() {
     year: "numeric",
   });
 
+  const onApply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason.trim() || !fromDate || !toDate || !user) return;
+    const who =
+      user.role === "parent"
+        ? (studentName.trim() || user.childName || "Student")
+        : user.name;
+    applyLeave({
+      user,
+      studentName: who,
+      fromDate,
+      toDate: toDate < fromDate ? fromDate : toDate,
+      reason,
+    });
+    setReason("");
+    setFlash(
+      user.role === "parent"
+        ? "Leave submitted — waiting for teacher / admin approval."
+        : "Staff leave submitted — waiting for school admin approval."
+    );
+  };
+
   const leaveDays = useMemo(
     () => approvedLeaveDates(user ?? null),
     [approvedLeaveDates, user],
   );
 
+  // Student/Parent Status Map
   const statusMap = useMemo(() => {
     const map: Record<number, "P" | "A" | "L" | "H" | null> = {};
     for (let d = 1; d <= daysInMonth; d++) {
@@ -101,7 +114,6 @@ export default function AttendancePage() {
         map[d] = "L";
         continue;
       }
-      // Demo base pattern for non-leave weekdays
       if (d % 11 === 0) map[d] = "A";
       else if (d % 13 === 0) map[d] = "H";
       else map[d] = "P";
@@ -125,30 +137,37 @@ export default function AttendancePage() {
     return { present, absent, leave, half, pct };
   }, [statusMap]);
 
+  // Staff Personal Status Map & Stats
+  const staffStatusMap = useMemo(() => {
+    if (!user) return {};
+    return getStaffMonthStatusMap(user.id, year, month);
+  }, [user, year, month, getStaffMonthStatusMap]);
+
+  const staffStats = useMemo(() => {
+    if (!user) return { present: 0, absent: 0, leave: 0, half: 0, pct: 0 };
+    return getStaffMonthStats(user.id, year, month);
+  }, [user, year, month, getStaffMonthStats]);
+
   const history = useMemo(() => {
     if (!user) return [];
-    if (teacher) {
-      return leaves.filter(
-        (l) => !user.className || !l.className || l.className === user.className,
-      );
-    }
     const mine = myLeaves(user.id);
     if (mine.length) return mine;
     return leaves.filter(
       (l) =>
+        l.applicantId === user.id ||
         l.applicantId === "seed-parent" ||
         (user.childName &&
           l.studentName.toLowerCase() === user.childName.toLowerCase()) ||
         l.studentName.toLowerCase() === user.name.toLowerCase(),
     );
-  }, [user, teacher, leaves, myLeaves]);
+  }, [user, leaves, myLeaves]);
 
   const cells: (number | null)[] = [
     ...Array(startWeekday).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
 
-  if (!ready || !leavesReady) {
+  if (!ready || !leavesReady || !staffReady) {
     return (
       <PhoneShell subtitle="Calendar & leaves" title="Attendance">
         <LoadingBlock label="Loading attendance…" />
@@ -162,7 +181,7 @@ export default function AttendancePage() {
   return (
     <PhoneShell
       subtitle={
-        teacher
+        teacher && activeTab === "class"
           ? `Class ${user?.className || "6-B"} · ${todayKey}`
           : monthLabel
       }
@@ -171,18 +190,50 @@ export default function AttendancePage() {
     >
       <section className="list-hero list-hero-blue">
         <p className="list-hero-kicker">
-          {teacher ? "Class desk" : "Trust view"}
+          {teacher ? "Staff & Class Desk" : "Trust view"}
         </p>
         <h2 className="list-hero-title">
-          {teacher ? "Mark today’s attendance" : "Attendance & leaves"}
+          {teacher
+            ? activeTab === "class"
+              ? "Mark today’s attendance"
+              : "My Staff Attendance"
+            : isStaff
+            ? "Staff Attendance & Leaves"
+            : "Attendance & leaves"}
         </h2>
         <p className="list-hero-body">
           {teacher
-            ? "Roster marks, leave approvals, and class presence in one desk."
+            ? activeTab === "class"
+              ? "Roster marks, leave approvals, and class presence in one desk."
+              : "Track your personal presence, leaves, and monthly attendance stats."
+            : isStaff
+            ? "Track your personal presence, leaves, and monthly staff attendance stats."
             : "See present days, leaves, and month summary at a glance."}
         </p>
       </section>
-      {teacher ? (
+
+      {/* Tab switch for Class Teachers */}
+      {teacher && (
+        <div className="admin-tabs mt-3 mb-2">
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === "class" ? "active" : ""}`}
+            onClick={() => setActiveTab("class")}
+          >
+            Class Roster Desk
+          </button>
+          <button
+            type="button"
+            className={`admin-tab ${activeTab === "personal" ? "active" : ""}`}
+            onClick={() => setActiveTab("personal")}
+          >
+            My Staff Attendance
+          </button>
+        </div>
+      )}
+
+      {/* Teacher Class Roster Desk View */}
+      {teacher && activeTab === "class" ? (
         <>
           <section className="card" style={{ padding: "1.25rem" }}>
             <div className="row" style={{ alignItems: "flex-end" }}>
@@ -309,11 +360,147 @@ export default function AttendancePage() {
           <Link href="/class" className="btn-primary mt-4">
             Open teacher class desk
           </Link>
+        </>
+      ) : isStaff ? (
+        /* Staff Personal Attendance Calendar View (Teachers' own, Bus Attendant, Accountant, Admin, Principal) */
+        <>
+          <div className="summary-card mt-2">
+            <div className="ring" style={{ ["--p" as string]: `${staffStats.pct}%` }}>
+              <div className="ring-inner">{staffStats.pct}%</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 16, marginBottom: 4 }}>
+                {staffStats.pct >= 85 ? "Healthy staff attendance" : "Needs attention"}
+              </div>
+              <div style={{ fontSize: 12, opacity: 0.88 }}>
+                {staffStats.present} present · {staffStats.absent} absent · {staffStats.leave} leave this month
+              </div>
+            </div>
+          </div>
 
-          <h2 className="section-label">Leave history</h2>
+          <div className="month-nav">
+            <div className="arrow-btn">‹</div>
+            <div className="m-title">{monthLabel}</div>
+            <div className="arrow-btn">›</div>
+          </div>
+
+          <div className="cal-grid">
+            <div className="cal-dow">S</div>
+            <div className="cal-dow">M</div>
+            <div className="cal-dow">T</div>
+            <div className="cal-dow">W</div>
+            <div className="cal-dow">T</div>
+            <div className="cal-dow">F</div>
+            <div className="cal-dow">S</div>
+            {cells.map((d, i) => {
+              if (!d) return <div key={i} className="cal-day blank" />;
+              const st = staffStatusMap[d];
+              const cls = st === "P" ? "p" : st === "A" ? "a" : st === "L" ? "l" : st === "H" ? "h" : "blank";
+              return (
+                <div key={i} className={`cal-day ${cls}`}>
+                  {d}
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="legend mb-3">
+            <Legend color="var(--success)" label="Present" />
+            <Legend color="var(--danger)" label="Absent" />
+            <Legend color="var(--info)" label="Leave" />
+            <Legend color="var(--warning)" label="Half" />
+          </div>
+
+          <div className="hw-card" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--surface)" }}>
+            <div>
+              <div className="font-bold text-sm" style={{ marginBottom: 2 }}>Need a day off?</div>
+              <div className="text-11 muted">Submit staff leave application to administration</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowApplyForm((prev) => !prev)}
+              className="icon-btn"
+              style={{
+                background: "var(--primary)",
+                color: "#ffffff",
+                boxShadow: "var(--shadow-pop)",
+                border: "none",
+                cursor: "pointer",
+                width: 36,
+                height: 36,
+                fontSize: 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "999px",
+                transition: "transform 0.2s ease",
+                transform: showApplyForm ? "rotate(45deg)" : "none",
+              }}
+              title={showApplyForm ? "Close leave form" : "Apply for leave"}
+            >
+              +
+            </button>
+          </div>
+
+          {showApplyForm && (
+            <form className="card card-pad mt-3 space-y" onSubmit={onApply}>
+              <div>
+                <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                  Apply for staff leave
+                </p>
+                <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+                  Approved leave automatically marks those dates as Leave (L) on your staff attendance record.
+                </p>
+              </div>
+              <div className="wa-meta-row">
+                <label className="grow">
+                  <span className="text-xs font-medium muted">From date</span>
+                  <input
+                    type="date"
+                    className="input"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="grow">
+                  <span className="text-xs font-medium muted">To date</span>
+                  <input
+                    type="date"
+                    className="input"
+                    value={toDate}
+                    min={fromDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+              <label>
+                <span className="text-xs font-medium muted">Reason for leave</span>
+                <input
+                  className="input"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Personal leave / medical checkup / official duty"
+                  required
+                />
+              </label>
+              {flash && (
+                <p className="text-11 tone-success row" style={{ gap: 6, margin: 0 }}>
+                  <ShieldCheck size={14} /> {flash}
+                </p>
+              )}
+              <button type="submit" className="btn-primary">
+                Submit staff leave request
+              </button>
+            </form>
+          )}
+
+          <h2 className="section-label">My leave history</h2>
           <LeaveHistoryList items={history} />
         </>
       ) : (
+        /* Student / Parent View */
         <>
           <div className="summary-card mt-2">
             <div className="ring" style={{ ["--p" as string]: `${leaveStats.pct}%` }}>
@@ -403,7 +590,7 @@ export default function AttendancePage() {
                   Approved leave automatically marks those dates as Leave (L) on the attendance record.
                 </p>
               </div>
-              {(user?.role === "parent" || user?.role === "class_teacher" || !user?.role) && (
+              {user?.role === "parent" && (
                 <label>
                   <span className="text-xs font-medium muted">Student name</span>
                   <input

@@ -6,6 +6,7 @@ import {
   EnrollmentProvider,
   LeavesProvider,
   SchoolDataProvider,
+  StaffAttendanceProvider,
   StudentEngageProvider,
   TeacherClassProvider,
 } from "@/lib/providers";
@@ -48,11 +49,13 @@ export default function RootLayout({
             <TeacherClassProvider>
               <StudentEngageProvider>
                 <LeavesProvider>
-                  <EnrollmentProvider>
-                    <BusTrackProvider>
-                      <AdminDataProvider>{children}</AdminDataProvider>
-                    </BusTrackProvider>
-                  </EnrollmentProvider>
+                  <StaffAttendanceProvider>
+                    <EnrollmentProvider>
+                      <BusTrackProvider>
+                        <AdminDataProvider>{children}</AdminDataProvider>
+                      </BusTrackProvider>
+                    </EnrollmentProvider>
+                  </StaffAttendanceProvider>
                 </LeavesProvider>
               </StudentEngageProvider>
             </TeacherClassProvider>

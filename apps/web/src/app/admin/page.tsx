@@ -13,6 +13,7 @@ import {
 import { useAdminData } from "@/lib/providers/admin-data";
 import { useTeacherClass } from "@/lib/providers/teacher-class";
 import { formatLeaveRange, useLeaves } from "@/lib/providers/leaves";
+import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import { EnrollmentDesk } from "@/components/admin/EnrollmentDesk";
 import {
   ShieldCheck,
@@ -77,7 +78,14 @@ export default function AdminPage() {
   const { user, listUsers, refreshUser } = useAuth();
   const admin = useAdminData();
   const teacherClass = useTeacherClass();
-  const { pendingTeacherLeaves, reviewLeave } = useLeaves();
+  const { pendingTeacherLeaves, reviewLeave, leaves } = useLeaves();
+  const {
+    staffRoster,
+    todayMarks: staffTodayMarks,
+    setStaffMark,
+    markAllStaffPresent,
+    todayKey: staffTodayKey,
+  } = useStaffAttendance();
   const [tab, setTab] = useState<Tab>("overview");
   const [decisions, setDecisions] = useState<
     Record<string, "pass" | "fail">
@@ -650,6 +658,73 @@ export default function AdminPage() {
               </ul>
             </section>
           )}
+
+          <section className="card card-pad mb-3">
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                  Mark Staff &amp; Teacher Attendance ({staffTodayKey})
+                </p>
+                <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+                  Principal &amp; Admin daily desk for teachers, bus attendants &amp; accountants.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="tone-primary font-semibold text-xs"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}
+                onClick={() => markAllStaffPresent()}
+              >
+                Mark all Present
+              </button>
+            </div>
+
+            <ul className="roster-list mt-3">
+              {staffRoster.map((s) => {
+                const mark = staffTodayMarks[s.id];
+                const onLeave = leaves.some(
+                  (l) =>
+                    l.status === "approved" &&
+                    (l.applicantId === s.id ||
+                      l.studentName.toLowerCase() === s.name.toLowerCase()) &&
+                    l.fromDate <= staffTodayKey &&
+                    l.toDate >= staffTodayKey,
+                );
+                return (
+                  <li key={s.id} className="roster-card">
+                    <div className="row" style={{ gap: 10 }}>
+                      <div className="roster-avatar">{s.avatar}</div>
+                      <div className="grow">
+                        <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                          {s.name}
+                        </p>
+                        <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+                          {ROLE_LABEL[s.role] || s.role} {s.className ? `· Class ${s.className}` : ""}
+                          {onLeave ? " · Approved leave today" : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mark-row mt-2">
+                      {(["P", "A", "L", "H"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          className={`mark-btn mark-${m} ${
+                            mark === m || (onLeave && m === "L" && !mark)
+                              ? "active"
+                              : ""
+                          }`}
+                          onClick={() => setStaffMark(s.id, m)}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
 
           {attendanceLoading ? <LoadingBlock label="Loading report…" /> : null}
 

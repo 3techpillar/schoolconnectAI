@@ -16,3 +16,4 @@ export {
 } from "./enrollment";
 export { BusTrackProvider, useBusTrack } from "./bus-track";
 export { AdminDataProvider, useAdminData } from "./admin-data";
+export { StaffAttendanceProvider, useStaffAttendance } from "./staff-attendance";

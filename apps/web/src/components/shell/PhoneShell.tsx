@@ -22,6 +22,7 @@ import {
   GraduationCap,
   ShieldCheck,
   Menu,
+  Bus,
 } from "@/components/shell/Icons";
 import { AppIcon, type AppIconTone } from "@/components/shell/AppIcon";
 import { LoadingBlock } from "@/components/shell/StatusUI";
@@ -61,6 +62,8 @@ export function PhoneShell({
   const isFamily = isFamilyRole(user?.role);
   const isTeacher = canPostAsTeacher(user);
   const isAdmin = isSchoolAdmin(user) || user?.role === "principal";
+  const isBusAttendant = user?.role === "bus_attendant";
+  const isAccountant = user?.role === "accountant";
   const needsSetup =
     needsSchoolAssignment(user, backend) || needsEnrollmentApproval(user);
   const showFees = Boolean(user?.capabilities?.fees);
@@ -102,25 +105,43 @@ export function PhoneShell({
                 tone: "orange" as const,
               },
             ]
-          : [
-              { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-              { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
-              {
-                to: "/homework",
-                label: "Homework",
-                icon: BookOpen,
-                tone: "orange" as const,
-              },
-              {
-                to: "/attendance",
-                label: "Attend",
-                icon: CalendarCheck,
-                tone: "green" as const,
-              },
-              ...(showFees
-                ? [{ to: "/fees", label: "Fees", icon: Wallet, tone: "teal" as const }]
-                : [{ to: "/more", label: "More", icon: Menu, tone: "slate" as const }]),
-            ]
+          : isBusAttendant
+            ? [
+                { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
+                { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                {
+                  to: "/attendance",
+                  label: "Attend",
+                  icon: CalendarCheck,
+                  tone: "orange" as const,
+                },
+                { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+              ]
+            : isAccountant
+              ? [
+                  { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                  { to: "/fees", label: "Fees", icon: Wallet, tone: "green" as const },
+                  { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                  {
+                    to: "/attendance",
+                    label: "Attend",
+                    icon: CalendarCheck,
+                    tone: "orange" as const,
+                  },
+                  { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                ]
+              : [
+                  { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                  { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                  {
+                    to: "/attendance",
+                    label: "Attend",
+                    icon: CalendarCheck,
+                    tone: "green" as const,
+                  },
+                  { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                ]
   ) as NavItem[];
 
   useEffect(() => {
