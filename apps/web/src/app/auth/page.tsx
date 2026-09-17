@@ -29,14 +29,20 @@ type Channel = "email" | "phone";
 const ROLES = SIGNUP_ROLES;
 
 const QUICK_DEMO_USERS = [
-  { role: "super_admin", label: "Super Admin", sub: "Platform owner", email: "super@schoolconnect.demo", badge: "👑 Platform" },
-  { role: "admin", label: "Radoms Admin", sub: "Full ERP mode", email: "admin@radoms.demo", badge: "🏢 ERP" },
-  { role: "class_teacher", label: "Ms. Mehta", sub: "Class 6-B teacher", email: "teacher@radoms.demo", badge: "👩‍🏫 Teacher" },
+  { role: "super_admin", label: "Super Admin", sub: "Platform owner", email: "super@schoolconnect.demo", badge: "👑 Super Admin" },
+  { role: "admin", label: "Radoms Admin", sub: "Full ERP mode", email: "admin@radoms.demo", badge: "🏢 School Admin" },
+  { role: "principal", label: "Dr. Kapoor", sub: "School Principal", email: "principal@radoms.demo", badge: "🏫 Principal" },
+  { role: "vice_principal", label: "Mr. Saxena", sub: "Vice Principal", email: "vp@radoms.demo", badge: "👔 Vice Principal" },
+  { role: "class_teacher", label: "Ms. Mehta", sub: "Class 6-B teacher", email: "teacher@radoms.demo", badge: "👩‍🏫 Class Teacher" },
+  { role: "subject_teacher", label: "Mr. Verma", sub: "Maths Teacher", email: "subject.teacher@radoms.demo", badge: "📐 Subject Teacher" },
   { role: "parent", label: "RIS Parent", sub: "Ishaan's parent", email: "parent@radoms.demo", badge: "👨‍👩‍👦 Parent" },
   { role: "student", label: "Ishaan Gupta", sub: "Student (6-B)", email: "student@radoms.demo", badge: "🎓 Student" },
-  { role: "bus_attendant", label: "Bus Attendant", sub: "Route-12 Driver", email: "bus@radoms.demo", badge: "🚌 Bus" },
-  { role: "admin", label: "Noida Admin", sub: "Radmos Group", email: "admin.noida@radmos.demo", badge: "📍 Noida" },
-  { role: "admin", label: "Lucknow Admin", sub: "Transfers desk", email: "admin.lucknow@radmos.demo", badge: "📍 Lucknow" },
+  { role: "accountant", label: "Mr. Bansal", sub: "Accounts & Fees", email: "accountant@radoms.demo", badge: "💳 Accountant" },
+  { role: "transport_manager", label: "Mr. Rawat", sub: "Fleet Manager", email: "transport@radoms.demo", badge: "🚍 Transport Mgr" },
+  { role: "bus_driver", label: "Suresh Driver", sub: "Route-12 Driver", email: "driver@radoms.demo", badge: "🚘 Bus Driver" },
+  { role: "bus_attendant", label: "Ramesh Attendant", sub: "Route-12 Attendant", email: "bus@radoms.demo", badge: "🚌 Attendant" },
+  { role: "librarian", label: "Mrs. Sen", sub: "Library Desk", email: "library@radoms.demo", badge: "📚 Librarian" },
+  { role: "receptionist", label: "Ms. Ananya", sub: "Front Office Desk", email: "frontdesk@radoms.demo", badge: "📞 Receptionist" },
 ];
 
 const ROLE_INFO: Record<string, { label: string; desc: string; icon: typeof GraduationCap }> = {
@@ -55,15 +61,60 @@ const ROLE_INFO: Record<string, { label: string; desc: string; icon: typeof Grad
     desc: "Take roll call attendance, assign homework & chat",
     icon: BookOpen,
   },
+  subject_teacher: {
+    label: "Subject Teacher",
+    desc: "Assign subject homework, marks entry & doubt solver",
+    icon: BookOpen,
+  },
   bus_attendant: {
     label: "Bus Attendant",
-    desc: "Live route tracking & parent arrival alerts",
+    desc: "Student boarding check-ins & route ETA alerts",
     icon: Bus,
+  },
+  bus_driver: {
+    label: "Bus Driver",
+    desc: "Live GPS navigation, route tracking & SOS alerts",
+    icon: Bus,
+  },
+  transport_manager: {
+    label: "Transport Manager",
+    desc: "Fleet oversight, route stops & vehicle maintenance",
+    icon: Bus,
+  },
+  librarian: {
+    label: "Librarian",
+    desc: "Book cataloging, issue/return desk & overdue fines",
+    icon: BookOpen,
+  },
+  receptionist: {
+    label: "Receptionist",
+    desc: "Front office visitor desk & admission inquiries",
+    icon: School,
+  },
+  accountant: {
+    label: "Accountant",
+    desc: "Fee structures, online invoices & payment ledgers",
+    icon: ShieldCheck,
+  },
+  vice_principal: {
+    label: "Vice Principal",
+    desc: "Disciplinary supervision, timetable & exam oversight",
+    icon: School,
   },
   principal: {
     label: "Principal / Leadership",
-    desc: "School leadership & administrative approvals",
+    desc: "School leadership, staff leave & academic approvals",
     icon: School,
+  },
+  admin: {
+    label: "School Admin",
+    desc: "Full school operations, user setup & system logs",
+    icon: ShieldCheck,
+  },
+  super_admin: {
+    label: "Super Admin",
+    desc: "Multi-branch platform owner & system configuration",
+    icon: ShieldCheck,
   },
 };
 

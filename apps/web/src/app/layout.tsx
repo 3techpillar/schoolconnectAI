@@ -5,6 +5,7 @@ import {
   BusTrackProvider,
   EnrollmentProvider,
   LeavesProvider,
+  RBACProvider,
   SchoolDataProvider,
   StaffAttendanceProvider,
   StudentEngageProvider,
@@ -45,21 +46,23 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
-          <SchoolDataProvider>
-            <TeacherClassProvider>
-              <StudentEngageProvider>
-                <LeavesProvider>
-                  <StaffAttendanceProvider>
-                    <EnrollmentProvider>
-                      <BusTrackProvider>
-                        <AdminDataProvider>{children}</AdminDataProvider>
-                      </BusTrackProvider>
-                    </EnrollmentProvider>
-                  </StaffAttendanceProvider>
-                </LeavesProvider>
-              </StudentEngageProvider>
-            </TeacherClassProvider>
-          </SchoolDataProvider>
+          <RBACProvider>
+            <SchoolDataProvider>
+              <TeacherClassProvider>
+                <StudentEngageProvider>
+                  <LeavesProvider>
+                    <StaffAttendanceProvider>
+                      <EnrollmentProvider>
+                        <BusTrackProvider>
+                          <AdminDataProvider>{children}</AdminDataProvider>
+                        </BusTrackProvider>
+                      </EnrollmentProvider>
+                    </StaffAttendanceProvider>
+                  </LeavesProvider>
+                </StudentEngageProvider>
+              </TeacherClassProvider>
+            </SchoolDataProvider>
+          </RBACProvider>
         </AuthProvider>
       </body>
     </html>

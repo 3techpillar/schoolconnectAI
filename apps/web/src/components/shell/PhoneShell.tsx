@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useAuth, isSchoolAdmin } from "@/lib/providers/auth";
+import { isSchoolAdminRole, isFamilyRole } from "@schoolconnect/shared";
 import {
   isLimitedAccessPath,
   needsEnrollmentApproval,
   needsSchoolAssignment,
 } from "@/lib/providers/enrollment";
 import { useSchoolData } from "@/lib/providers/school-data";
-import { isFamilyRole } from "@/lib/shared/roles";
 import {
   Home,
   BookOpen,
@@ -60,10 +60,14 @@ export function PhoneShell({
   const { unreadNotifications, unreadChats, canPostAsTeacher } = useSchoolData();
 
   const isFamily = isFamilyRole(user?.role);
-  const isTeacher = canPostAsTeacher(user);
-  const isAdmin = isSchoolAdmin(user) || user?.role === "principal";
-  const isBusAttendant = user?.role === "bus_attendant";
+  const isTeacher = user?.role === "class_teacher";
+  const isSubjectTeacher = user?.role === "subject_teacher";
+  const isAdmin = isSchoolAdminRole(user?.role);
+  const isTransportStaff = user?.role === "bus_attendant" || user?.role === "bus_driver";
+  const isTransportMgr = user?.role === "transport_manager";
   const isAccountant = user?.role === "accountant";
+  const isLibrarian = user?.role === "librarian";
+  const isReceptionist = user?.role === "receptionist";
   const needsSetup =
     needsSchoolAssignment(user, backend) || needsEnrollmentApproval(user);
   const showFees = Boolean(user?.capabilities?.fees);
@@ -105,37 +109,60 @@ export function PhoneShell({
               },
               { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
             ]
-          : isBusAttendant
+          : isSubjectTeacher
             ? [
                 { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-                { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
+                { to: "/homework", label: "Homework", icon: BookOpen, tone: "green" as const },
                 { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                { to: "/attendance", label: "Attend", icon: CalendarCheck, tone: "orange" as const },
                 { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
               ]
-            : isAccountant
+            : isTransportStaff
               ? [
                   { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-                  { to: "/fees", label: "Fees", icon: Wallet, tone: "green" as const },
+                  { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
                   { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
-                  {
-                    to: "/attendance",
-                    label: "Attend",
-                    icon: CalendarCheck,
-                    tone: "orange" as const,
-                  },
                   { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
                 ]
-              : [
-                  { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-                  { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
-                  {
-                    to: "/attendance",
-                    label: "Attend",
-                    icon: CalendarCheck,
-                    tone: "green" as const,
-                  },
-                  { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
-                ]
+              : isTransportMgr
+                ? [
+                    { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                    { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
+                    { to: "/admin", label: "Admin", icon: ShieldCheck, tone: "slate" as const },
+                    { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                    { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                  ]
+                : isAccountant
+                  ? [
+                      { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                      { to: "/fees", label: "Fees", icon: Wallet, tone: "green" as const },
+                      { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                      {
+                        to: "/attendance",
+                        label: "Attend",
+                        icon: CalendarCheck,
+                        tone: "orange" as const,
+                      },
+                      { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                    ]
+                  : isLibrarian || isReceptionist
+                    ? [
+                        { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                        { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                        { to: "/circulars", label: "Notice", icon: Bell, tone: "orange" as const },
+                        { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                      ]
+                    : [
+                        { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                        { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                        {
+                          to: "/attendance",
+                          label: "Attend",
+                          icon: CalendarCheck,
+                          tone: "green" as const,
+                        },
+                        { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                      ]
   ) as NavItem[];
 
   useEffect(() => {
