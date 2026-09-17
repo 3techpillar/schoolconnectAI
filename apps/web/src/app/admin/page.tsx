@@ -12,6 +12,7 @@ import {
 } from "@/lib/providers/auth";
 import { useAdminData } from "@/lib/providers/admin-data";
 import { useTeacherClass } from "@/lib/providers/teacher-class";
+import { formatLeaveRange, useLeaves } from "@/lib/providers/leaves";
 import { EnrollmentDesk } from "@/components/admin/EnrollmentDesk";
 import {
   ShieldCheck,
@@ -76,6 +77,7 @@ export default function AdminPage() {
   const { user, listUsers, refreshUser } = useAuth();
   const admin = useAdminData();
   const teacherClass = useTeacherClass();
+  const { pendingTeacherLeaves, reviewLeave } = useLeaves();
   const [tab, setTab] = useState<Tab>("overview");
   const [decisions, setDecisions] = useState<
     Record<string, "pass" | "fail">
@@ -589,13 +591,65 @@ export default function AdminPage() {
       {tab === "attendance" && (
         <div className="space-y mt-3">
           <section className="list-hero list-hero-blue" style={{ marginBottom: 0 }}>
-            <p className="list-hero-kicker">Teacher report</p>
+            <p className="list-hero-kicker">Teacher &amp; Staff report</p>
             <h2 className="list-hero-title">Leave &amp; attendance</h2>
             <p className="list-hero-body">
-              Approved leave auto-marks students as L on the class sheet. Month{" "}
-              {attendanceReport?.month || "—"}.
+              Approved student leave auto-marks L on class sheets. Teacher leaves are reviewed below.
             </p>
           </section>
+
+          {pendingTeacherLeaves.length > 0 && (
+            <section className="card card-pad" style={{ borderLeft: "4px solid var(--primary)" }}>
+              <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                Pending Teacher Leave Approvals ({pendingTeacherLeaves.length})
+              </p>
+              <p className="text-11 muted" style={{ margin: "2px 0 10px" }}>
+                Review and approve or reject leave applications submitted by teaching staff.
+              </p>
+              <ul className="leave-list">
+                {pendingTeacherLeaves.map((l) => (
+                  <li key={l.id} className="card card-pad" style={{ background: "var(--bg)", marginBottom: 8 }}>
+                    <div className="row" style={{ justifyContent: "space-between" }}>
+                      <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                        {l.applicantName} {l.className ? `· Class ${l.className}` : "· Staff"}
+                      </p>
+                      <span className="leave-badge leave-pending">pending</span>
+                    </div>
+                    <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
+                      {formatLeaveRange(l.fromDate, l.toDate)}
+                    </p>
+                    <p className="text-xs" style={{ margin: "6px 0 0" }}>
+                      Reason: {l.reason}
+                    </p>
+                    <div className="row mt-2" style={{ gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{ width: "auto", padding: "0.45rem 0.9rem" }}
+                        onClick={() => {
+                          reviewLeave(l.id, "approved", user);
+                          setFlash(`Approved leave for ${l.applicantName}`);
+                        }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ width: "auto", padding: "0.45rem 0.9rem" }}
+                        onClick={() => {
+                          reviewLeave(l.id, "rejected", user);
+                          setFlash(`Rejected leave for ${l.applicantName}`);
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {attendanceLoading ? <LoadingBlock label="Loading report…" /> : null}
 

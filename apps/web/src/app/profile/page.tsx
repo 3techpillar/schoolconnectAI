@@ -73,10 +73,7 @@ export default function ProfilePage() {
     );
   }
 
-  const canApply =
-    user.role === "parent" ||
-    user.role === "student" ||
-    user.role === "class_teacher";
+  const canApply = true;
 
   const saveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,9 +105,9 @@ export default function ProfilePage() {
     e.preventDefault();
     if (!reason.trim() || !fromDate || !toDate) return;
     const who =
-      studentName.trim() ||
-      user.childName ||
-      (user.role === "student" ? user.name : user.name);
+      user.role === "parent"
+        ? (studentName.trim() || user.childName || "Student")
+        : user.name;
     applyLeave({
       user,
       studentName: who,
@@ -119,7 +116,11 @@ export default function ProfilePage() {
       reason,
     });
     setReason("");
-    setFlash("Leave submitted — waiting for teacher / admin approval.");
+    setFlash(
+      user.role === "parent"
+        ? "Leave submitted — waiting for teacher / admin approval."
+        : "Teacher leave submitted — waiting for school admin approval."
+    );
   };
 
   return (
@@ -319,13 +320,19 @@ export default function ProfilePage() {
         <form className="card card-pad mt-4 space-y" onSubmit={onApply}>
           <div>
             <p className="font-semibold text-sm" style={{ margin: 0 }}>
-              Apply for leave
+              {user.role === "parent"
+                ? "Apply for leave"
+                : user.role === "class_teacher" || user.role === "principal"
+                ? "Apply for teacher leave"
+                : "Apply for leave"}
             </p>
             <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
-              Approved leave automatically marks those dates as Leave (L) on the attendance record.
+              {user.role === "parent"
+                ? "Approved leave automatically marks those dates as Leave (L) on the attendance record."
+                : "Submit leave application for your own absence to school administration."}
             </p>
           </div>
-          {(user.role === "parent" || user.role === "class_teacher") && (
+          {user.role === "parent" && (
             <label>
               <span className="text-xs font-medium muted">Student name</span>
               <input
@@ -365,7 +372,11 @@ export default function ProfilePage() {
               className="input"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Medical illness / family function / travel"
+              placeholder={
+                user.role === "parent"
+                  ? "Medical illness / family function / travel"
+                  : "Personal leave / medical checkup / official duty"
+              }
               required
             />
           </label>
@@ -375,51 +386,57 @@ export default function ProfilePage() {
             </p>
           )}
           <button type="submit" className="btn-primary">
-            Submit leave request
+            {user.role === "parent" ? "Submit leave request" : "Submit teacher leave"}
           </button>
         </form>
       )}
 
-      <h2 className="section-label">Leave history</h2>
-      {history.length === 0 ? (
-        <EmptyState
-          icon={CalendarCheck}
-          tone="teal"
-          title="No leave requests yet"
-          body="Submit a leave above and it will appear in this list."
-        />
-      ) : (
-        <ul className="leave-list">
-          {history.map((l) => (
-            <li key={l.id} className="card card-pad">
-              <div
-                className="row"
-                style={{ justifyContent: "space-between", gap: 8 }}
-              >
-                <div className="grow">
-                  <p className="font-semibold text-sm" style={{ margin: 0 }}>
-                    {l.studentName}
-                  </p>
-                  <p
-                    className="text-11 muted row"
-                    style={{ margin: "4px 0 0", gap: 4 }}
+      {canApply && (
+        <>
+          <h2 className="section-label">
+            {user.role === "parent" ? "Leave history" : "My leave history"}
+          </h2>
+          {history.length === 0 ? (
+            <EmptyState
+              icon={CalendarCheck}
+              tone="teal"
+              title="No leave requests yet"
+              body="Submit a leave above and it will appear in this list."
+            />
+          ) : (
+            <ul className="leave-list">
+              {history.map((l) => (
+                <li key={l.id} className="card card-pad">
+                  <div
+                    className="row"
+                    style={{ justifyContent: "space-between", gap: 8 }}
                   >
-                    <CalendarCheck size={12} />
-                    {formatLeaveRange(l.fromDate, l.toDate)}
+                    <div className="grow">
+                      <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                        {l.studentName}
+                      </p>
+                      <p
+                        className="text-11 muted row"
+                        style={{ margin: "4px 0 0", gap: 4 }}
+                      >
+                        <CalendarCheck size={12} />
+                        {formatLeaveRange(l.fromDate, l.toDate)}
+                      </p>
+                    </div>
+                    <LeaveBadge status={l.status} />
+                  </div>
+                  <p className="text-xs" style={{ margin: "8px 0 0" }}>
+                    {l.reason}
                   </p>
-                </div>
-                <LeaveBadge status={l.status} />
-              </div>
-              <p className="text-xs" style={{ margin: "8px 0 0" }}>
-                {l.reason}
-              </p>
-              <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
-                Applied {new Date(l.appliedAt).toLocaleDateString()}
-                {l.reviewedBy ? ` · ${l.status} by ${l.reviewedBy}` : ""}
-              </p>
-            </li>
-          ))}
-        </ul>
+                  <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
+                    Applied {new Date(l.appliedAt).toLocaleDateString()}
+                    {l.reviewedBy ? ` · ${l.status} by ${l.reviewedBy}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       <div

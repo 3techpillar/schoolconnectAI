@@ -33,6 +33,7 @@ export default function AttendancePage() {
   const {
     ready: leavesReady,
     pendingLeaves,
+    pendingStudentLeaves,
     reviewLeave,
     approvedLeaveDates,
     myLeaves,
@@ -220,11 +221,11 @@ export default function AttendancePage() {
             </div>
           </section>
 
-          {pendingLeaves.length > 0 && (
+          {pendingStudentLeaves.length > 0 && (
             <>
-              <h2 className="section-label">Pending leave approvals</h2>
+              <h2 className="section-label">Pending student leave approvals</h2>
               <ul className="leave-list">
-                {pendingLeaves.map((l) => (
+                {pendingStudentLeaves.map((l) => (
                   <li key={l.id} className="card card-pad">
                     <p className="font-semibold text-sm" style={{ margin: 0 }}>
                       {l.studentName}

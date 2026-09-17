@@ -11,6 +11,7 @@ import {
 } from "react";
 import { useAuth, type UserProfile } from "@/lib/providers/auth";
 import { useTeacherClass } from "@/lib/providers/teacher-class";
+import { useSchoolData } from "@/lib/providers/school-data";
 import { apiFetch } from "@/lib/shared/api-client";
 
 export type LeaveStatus = "pending" | "approved" | "rejected";
@@ -31,6 +32,7 @@ export interface LeaveRequest {
   reviewedBy?: string;
   reviewedAt?: number;
   note?: string;
+  leaveType?: "student" | "teacher";
 }
 
 interface LeavesCtx {
@@ -38,6 +40,8 @@ interface LeavesCtx {
   leaves: LeaveRequest[];
   myLeaves: (userId: string) => LeaveRequest[];
   pendingLeaves: LeaveRequest[];
+  pendingStudentLeaves: LeaveRequest[];
+  pendingTeacherLeaves: LeaveRequest[];
   applyLeave: (input: {
     user: UserProfile;
     studentName: string;
@@ -163,6 +167,7 @@ function applyApprovedLeaveOffline(
 export function LeavesProvider({ children }: { children: ReactNode }) {
   const { backend, ready: authReady, user } = useAuth();
   const { refreshDesk, roster } = useTeacherClass();
+  const { pushNotification } = useSchoolData();
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [ready, setReady] = useState(false);
 
@@ -192,10 +197,16 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
 
   const applyLeave: LeavesCtx["applyLeave"] = useCallback(
     async ({ user: actor, studentName, fromDate, toDate, reason }) => {
+      const isTeacher =
+        actor.role === "class_teacher" ||
+        actor.role === "principal" ||
+        actor.role === "admin";
+      const leaveType: "teacher" | "student" = isTeacher ? "teacher" : "student";
+
       if (backend) {
         const res = await apiFetch<{ leave: LeaveRequest }>("/api/leaves", {
           method: "POST",
-          body: JSON.stringify({ studentName, fromDate, toDate, reason }),
+          body: JSON.stringify({ studentName, fromDate, toDate, reason, leaveType }),
         });
         setLeaves((prev) => [res.leave, ...prev]);
         return res.leave;
@@ -214,19 +225,39 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
         reason: reason.trim(),
         status: "pending",
         appliedAt: Date.now(),
+        leaveType,
       };
       setLeaves((prev) => {
         const next = [req, ...prev];
         localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
         return next;
       });
+
+      if (isTeacher) {
+        pushNotification({
+          title: "Teacher Leave Application",
+          body: `${actor.name} requested leave (${fromDate} to ${toDate}): ${reason.trim()}`,
+          type: "activity",
+          href: "/admin",
+        });
+      } else {
+        pushNotification({
+          title: "New Student Leave Request",
+          body: `${actor.name} submitted leave for ${studentName.trim()} (${fromDate} to ${toDate}): ${reason.trim()}`,
+          type: "activity",
+          href: "/attendance",
+        });
+      }
+
       return req;
     },
-    [backend],
+    [backend, pushNotification],
   );
 
   const reviewLeave: LeavesCtx["reviewLeave"] = useCallback(
     async (id, status, reviewer, note) => {
+      const target = leaves.find((l) => l.id === id);
+
       if (backend) {
         await apiFetch(`/api/leaves/${encodeURIComponent(id)}`, {
           method: "PATCH",
@@ -267,15 +298,35 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
         return next;
       });
 
-      if (status === "approved") {
-        const leave = leaves.find((l) => l.id === id);
-        if (leave) {
-          applyApprovedLeaveOffline(leave, roster);
-          await refreshDesk();
+      if (target) {
+        const isTeacherLeave =
+          target.leaveType === "teacher" ||
+          target.applicantRole === "class_teacher" ||
+          target.applicantRole === "principal";
+
+        if (isTeacherLeave) {
+          pushNotification({
+            title: `Teacher Leave ${status === "approved" ? "Approved" : "Rejected"}`,
+            body: `Your leave request (${target.fromDate} to ${target.toDate}) was ${status} by ${reviewer.name}.`,
+            type: "activity",
+            href: "/profile",
+          });
+        } else {
+          pushNotification({
+            title: `Leave Request ${status === "approved" ? "Approved" : "Rejected"}`,
+            body: `Leave for ${target.studentName} (${target.fromDate} to ${target.toDate}) was ${status} by ${reviewer.name}.`,
+            type: "activity",
+            href: "/attendance",
+          });
         }
       }
+
+      if (status === "approved" && target) {
+        applyApprovedLeaveOffline(target, roster);
+        await refreshDesk();
+      }
     },
-    [backend, refreshDesk, leaves, roster],
+    [backend, refreshDesk, leaves, roster, pushNotification],
   );
 
   const approvedLeaveDates = useCallback(
@@ -316,11 +367,29 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<LeavesCtx>(() => {
+    const pendingList = leaves.filter((l) => l.status === "pending");
+    const pendingStudentLeaves = pendingList.filter(
+      (l) =>
+        l.leaveType === "student" ||
+        (l.applicantRole !== "class_teacher" &&
+          l.applicantRole !== "principal" &&
+          l.applicantRole !== "admin"),
+    );
+    const pendingTeacherLeaves = pendingList.filter(
+      (l) =>
+        l.leaveType === "teacher" ||
+        l.applicantRole === "class_teacher" ||
+        l.applicantRole === "principal" ||
+        l.applicantRole === "admin",
+    );
+
     return {
       ready,
       leaves,
       myLeaves: (userId) => leaves.filter((l) => l.applicantId === userId),
-      pendingLeaves: leaves.filter((l) => l.status === "pending"),
+      pendingLeaves: pendingList,
+      pendingStudentLeaves,
+      pendingTeacherLeaves,
       applyLeave,
       reviewLeave,
       approvedLeaveDates,
