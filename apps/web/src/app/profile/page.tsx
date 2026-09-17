@@ -10,6 +10,7 @@ import {
   useLeaves,
   type LeaveStatus,
 } from "@/lib/providers/leaves";
+import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import { useBusTrack } from "@/lib/providers/bus-track";
 import { toIsoDate } from "@/lib/shared/dates";
 import { Bus, CalendarCheck, FileText, LogOut, ShieldCheck } from "@/components/shell/Icons";
@@ -19,7 +20,8 @@ import { ParentLinksPanel } from "@/components/ParentLinksPanel";
 export default function ProfilePage() {
   const { user, updateUser, refreshUser, logout } = useAuth();
   const router = useRouter();
-  const { ready, applyLeave, myLeaves, leaves } = useLeaves();
+  const { ready, applyLeave, myLeaves, leaves, approvedLeaveDates } = useLeaves();
+  const { getStaffMonthStatusMap, getStaffMonthStats } = useStaffAttendance();
   const bus = useBusTrack();
   const [fromDate, setFromDate] = useState(toIsoDate());
   const [toDate, setToDate] = useState(toIsoDate());
@@ -49,21 +51,103 @@ export default function ProfilePage() {
     setParentAccess(user.parentAccess === "student" ? "student" : "guardian");
   }, [user]);
 
+  const isStaff = Boolean(user && user.role !== "student" && user.role !== "parent");
+
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const startWeekday = new Date(year, month, 1).getDay();
+  const monthLabel = now.toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+
+  const leaveDays = useMemo(
+    () => approvedLeaveDates(user ?? null),
+    [approvedLeaveDates, user],
+  );
+
+  const statusMap = useMemo(() => {
+    const map: Record<number, "P" | "A" | "L" | "H" | null> = {};
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      const dow = new Date(year, month, d).getDay();
+      if (dow === 0) {
+        map[d] = null;
+        continue;
+      }
+      if (leaveDays.has(key)) {
+        map[d] = "L";
+        continue;
+      }
+      if (d % 11 === 0) map[d] = "A";
+      else if (d % 13 === 0) map[d] = "H";
+      else map[d] = "P";
+    }
+    return map;
+  }, [daysInMonth, year, month, leaveDays]);
+
+  const leaveStats = useMemo(() => {
+    let present = 0;
+    let absent = 0;
+    let leave = 0;
+    let half = 0;
+    Object.values(statusMap).forEach((s) => {
+      if (s === "P") present += 1;
+      if (s === "A") absent += 1;
+      if (s === "L") leave += 1;
+      if (s === "H") half += 1;
+    });
+    const marked = present + absent + leave + half;
+    const pct = marked ? Math.round((present / marked) * 100) : 0;
+    return { present, absent, leave, half, pct };
+  }, [statusMap]);
+
+  const staffStatusMap = useMemo(() => {
+    if (!user) return {};
+    return getStaffMonthStatusMap(user.id, year, month);
+  }, [user, year, month, getStaffMonthStatusMap]);
+
+  const staffStats = useMemo(() => {
+    if (!user) return { present: 0, absent: 0, leave: 0, half: 0, pct: 0 };
+    return getStaffMonthStats(user.id, year, month);
+  }, [user, year, month, getStaffMonthStats]);
+
+  const cells: (number | null)[] = [
+    ...Array(startWeekday).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
+  ];
+
   const history = useMemo(() => {
     if (!user) return [];
-    const mine = myLeaves(user.id);
-    if (mine.length) return mine;
-    if (user.role === "parent" || user.role === "student") {
+    if (isStaff) {
       return leaves.filter(
         (l) =>
-          l.applicantId === "seed-parent" ||
-          (user.childName &&
-            l.studentName.toLowerCase() === user.childName.toLowerCase()) ||
-          l.studentName.toLowerCase() === user.name.toLowerCase(),
+          l.applicantId === user.id ||
+          (user.name && l.applicantName.toLowerCase() === user.name.toLowerCase()),
       );
     }
-    return mine;
-  }, [user, myLeaves, leaves]);
+    const mine = myLeaves(user.id);
+    if (mine.length) return mine;
+    if (user.role === "parent") {
+      const isDemoAarav = user.childName?.toLowerCase() === "aarav sharma";
+      return leaves.filter(
+        (l) =>
+          l.applicantId === user.id ||
+          (isDemoAarav && l.applicantId === "seed-parent") ||
+          (user.childName &&
+            l.studentName.toLowerCase() === user.childName.toLowerCase()),
+      );
+    }
+    const isDemoAaravStudent = user.name?.toLowerCase() === "aarav sharma";
+    return leaves.filter(
+      (l) =>
+        l.applicantId === user.id ||
+        (isDemoAaravStudent && l.applicantId === "seed-parent") ||
+        (user.name && l.studentName.toLowerCase() === user.name.toLowerCase()),
+    );
+  }, [user, isStaff, leaves, myLeaves]);
 
   if (!user || !ready) {
     return (
@@ -316,6 +400,69 @@ export default function ProfilePage() {
         />
       )}
 
+      {/* Personal Attendance Showcase Calendar for All Roles */}
+      <section className="card card-pad mt-4">
+        <h2 className="font-semibold text-sm" style={{ margin: "0 0 4px" }}>
+          {isStaff ? "My Staff Attendance Calendar" : "My Attendance Calendar"}
+        </h2>
+        <p className="text-11 muted" style={{ margin: "0 0 12px" }}>
+          {isStaff
+            ? "Your monthly staff presence, leaves, and attendance record."
+            : "Monthly student presence, leaves, and attendance log."}
+        </p>
+
+        <div className="summary-card">
+          <div className="ring" style={{ ["--p" as string]: `${isStaff ? staffStats.pct : leaveStats.pct}%` }}>
+            <div className="ring-inner">{isStaff ? staffStats.pct : leaveStats.pct}%</div>
+          </div>
+          <div>
+            <div style={{ fontFamily: "var(--font-display)", fontWeight: 600, fontSize: 15, marginBottom: 2 }}>
+              {(isStaff ? staffStats.pct : leaveStats.pct) >= 85
+                ? isStaff
+                  ? "Healthy staff attendance"
+                  : "Healthy attendance"
+                : "Needs attention"}
+            </div>
+            <div style={{ fontSize: 12, opacity: 0.88 }}>
+              {isStaff ? staffStats.present : leaveStats.present} present · {isStaff ? staffStats.absent : leaveStats.absent} absent · {isStaff ? staffStats.leave : leaveStats.leave} leave this month
+            </div>
+          </div>
+        </div>
+
+        <div className="month-nav mt-3">
+          <div className="arrow-btn">‹</div>
+          <div className="m-title">{monthLabel}</div>
+          <div className="arrow-btn">›</div>
+        </div>
+
+        <div className="cal-grid">
+          <div className="cal-dow">S</div>
+          <div className="cal-dow">M</div>
+          <div className="cal-dow">T</div>
+          <div className="cal-dow">W</div>
+          <div className="cal-dow">T</div>
+          <div className="cal-dow">F</div>
+          <div className="cal-dow">S</div>
+          {cells.map((d, i) => {
+            if (!d) return <div key={i} className="cal-day blank" />;
+            const st = isStaff ? staffStatusMap[d] : statusMap[d];
+            const cls = st === "P" ? "p" : st === "A" ? "a" : st === "L" ? "l" : st === "H" ? "h" : "blank";
+            return (
+              <div key={i} className={`cal-day ${cls}`}>
+                {d}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="legend mt-3 mb-1">
+          <Legend color="var(--success)" label="Present" />
+          <Legend color="var(--danger)" label="Absent" />
+          <Legend color="var(--info)" label="Leave" />
+          <Legend color="var(--warning)" label="Half" />
+        </div>
+      </section>
+
       {canApply && (
         <form className="card card-pad mt-4 space-y" onSubmit={onApply}>
           <div>
@@ -462,4 +609,13 @@ export default function ProfilePage() {
 
 function LeaveBadge({ status }: { status: LeaveStatus }) {
   return <span className={`leave-badge leave-${status}`}>{status}</span>;
+}
+
+function Legend({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="legend-item">
+      <span className="legend-dot" style={{ background: color }} />
+      {label}
+    </span>
+  );
 }

@@ -90,7 +90,12 @@ export function PhoneShell({
         : isTeacher
           ? [
               { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-              { to: "/class", label: "Class", icon: GraduationCap, tone: "teal" as const },
+              {
+                to: "/attendance",
+                label: "Attend",
+                icon: CalendarCheck,
+                tone: "orange" as const,
+              },
               { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
               {
                 to: "/homework",
@@ -98,24 +103,13 @@ export function PhoneShell({
                 icon: BookOpen,
                 tone: "green" as const,
               },
-              {
-                to: "/attendance",
-                label: "Attend",
-                icon: CalendarCheck,
-                tone: "orange" as const,
-              },
+              { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
             ]
           : isBusAttendant
             ? [
                 { to: "/", label: "Home", icon: Home, tone: "blue" as const },
                 { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
                 { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
-                {
-                  to: "/attendance",
-                  label: "Attend",
-                  icon: CalendarCheck,
-                  tone: "orange" as const,
-                },
                 { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
               ]
             : isAccountant

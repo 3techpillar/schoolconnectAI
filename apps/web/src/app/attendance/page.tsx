@@ -150,17 +150,33 @@ export default function AttendancePage() {
 
   const history = useMemo(() => {
     if (!user) return [];
+    if (isStaff) {
+      return leaves.filter(
+        (l) =>
+          l.applicantId === user.id ||
+          (user.name && l.applicantName.toLowerCase() === user.name.toLowerCase()),
+      );
+    }
     const mine = myLeaves(user.id);
     if (mine.length) return mine;
+    if (user.role === "parent") {
+      const isDemoAarav = user.childName?.toLowerCase() === "aarav sharma";
+      return leaves.filter(
+        (l) =>
+          l.applicantId === user.id ||
+          (isDemoAarav && l.applicantId === "seed-parent") ||
+          (user.childName &&
+            l.studentName.toLowerCase() === user.childName.toLowerCase()),
+      );
+    }
+    const isDemoAaravStudent = user.name?.toLowerCase() === "aarav sharma";
     return leaves.filter(
       (l) =>
         l.applicantId === user.id ||
-        l.applicantId === "seed-parent" ||
-        (user.childName &&
-          l.studentName.toLowerCase() === user.childName.toLowerCase()) ||
-        l.studentName.toLowerCase() === user.name.toLowerCase(),
+        (isDemoAaravStudent && l.applicantId === "seed-parent") ||
+        (user.name && l.studentName.toLowerCase() === user.name.toLowerCase()),
     );
-  }, [user, leaves, myLeaves]);
+  }, [user, isStaff, leaves, myLeaves]);
 
   const cells: (number | null)[] = [
     ...Array(startWeekday).fill(null),
