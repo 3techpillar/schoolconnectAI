@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import {
+  AcademicStructureProvider,
   AdminDataProvider,
   AuthProvider,
   BusTrackProvider,
@@ -47,21 +48,23 @@ export default function RootLayout({
       <body>
         <AuthProvider>
           <RBACProvider>
-            <SchoolDataProvider>
-              <TeacherClassProvider>
-                <StudentEngageProvider>
-                  <LeavesProvider>
-                    <StaffAttendanceProvider>
-                      <EnrollmentProvider>
-                        <BusTrackProvider>
-                          <AdminDataProvider>{children}</AdminDataProvider>
-                        </BusTrackProvider>
-                      </EnrollmentProvider>
-                    </StaffAttendanceProvider>
-                  </LeavesProvider>
-                </StudentEngageProvider>
-              </TeacherClassProvider>
-            </SchoolDataProvider>
+            <AcademicStructureProvider>
+              <SchoolDataProvider>
+                <TeacherClassProvider>
+                  <StudentEngageProvider>
+                    <LeavesProvider>
+                      <StaffAttendanceProvider>
+                        <EnrollmentProvider>
+                          <BusTrackProvider>
+                            <AdminDataProvider>{children}</AdminDataProvider>
+                          </BusTrackProvider>
+                        </EnrollmentProvider>
+                      </StaffAttendanceProvider>
+                    </LeavesProvider>
+                  </StudentEngageProvider>
+                </TeacherClassProvider>
+              </SchoolDataProvider>
+            </AcademicStructureProvider>
           </RBACProvider>
         </AuthProvider>
       </body>

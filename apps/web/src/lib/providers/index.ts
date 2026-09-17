@@ -18,3 +18,4 @@ export { BusTrackProvider, useBusTrack } from "./bus-track";
 export { AdminDataProvider, useAdminData } from "./admin-data";
 export { StaffAttendanceProvider, useStaffAttendance } from "./staff-attendance";
 export { RBACProvider, usePermission } from "./rbac";
+export { AcademicStructureProvider, useAcademicStructure } from "./academic-structure";

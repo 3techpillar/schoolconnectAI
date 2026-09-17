@@ -15,6 +15,7 @@ import { useTeacherClass } from "@/lib/providers/teacher-class";
 import { formatLeaveRange, useLeaves } from "@/lib/providers/leaves";
 import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import { EnrollmentDesk } from "@/components/admin/EnrollmentDesk";
+import { AcademicStructureDesk } from "@/components/admin/AcademicStructureDesk";
 import {
   ShieldCheck,
   GraduationCap,
@@ -28,6 +29,7 @@ import { canAccessErpConsole } from "@schoolconnect/shared";
 
 type Tab =
   | "overview"
+  | "academics"
   | "users"
   | "enroll"
   | "promotions"
@@ -173,6 +175,7 @@ export default function AdminPage() {
   const superMode = isSuperAdmin(user);
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
+    { id: "academics", label: "Academics" },
     { id: "users", label: "Users" },
     { id: "enroll", label: "Enroll" },
     { id: "promotions", label: "Promote" },
@@ -360,6 +363,12 @@ export default function AdminPage() {
               </ul>
             </section>
           )}
+        </div>
+      )}
+
+      {tab === "academics" && (
+        <div className="mt-3">
+          <AcademicStructureDesk />
         </div>
       )}
 
