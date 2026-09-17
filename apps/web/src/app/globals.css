@@ -8209,11 +8209,11 @@ ol {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0.85rem;
+  padding: 0.65rem 0.85rem;
   border-radius: 18px;
   background: #ffffff;
   border: 1.5px solid #F1F5F9;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   text-decoration: none;
   color: inherit;

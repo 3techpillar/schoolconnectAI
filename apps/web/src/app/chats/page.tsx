@@ -95,7 +95,7 @@ export default function ChatsPage() {
 
       {/* Instant AI Study Buddy Shortcut Card */}
       <div
-        className="buddy-instant-card mb-3"
+        className="buddy-instant-card mb-2"
         onClick={() => setIsBuddyOpen(true)}
         role="button"
         tabIndex={0}
@@ -122,7 +122,7 @@ export default function ChatsPage() {
       </div>
 
       {/* Search Input Bar */}
-      <div className="chat-search-pill mb-3">
+      <div className="chat-search-pill mb-2">
         <Search size={16} style={{ color: "var(--ink-soft)", flexShrink: 0 }} />
         <input
           value={q}
@@ -132,7 +132,7 @@ export default function ChatsPage() {
       </div>
 
       {/* Quick Category Filter Pills */}
-      <div className="hw-subject-scroll mb-3">
+      <div className="hw-subject-scroll mb-2">
         {[
           { key: "all", label: "All Chats", icon: "💬" },
           { key: "class", label: "Class 6-B", icon: "🏫" },
@@ -164,7 +164,7 @@ export default function ChatsPage() {
           }
         />
       ) : (
-        <div className="space-y" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {filtered.map((chat) => {
             const msgs = getMessages(chat.id);
             const last = msgs[msgs.length - 1];
