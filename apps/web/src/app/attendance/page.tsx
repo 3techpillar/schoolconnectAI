@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PhoneShell } from "@/components/shell/PhoneShell";
 import { useAuth } from "@/lib/providers/auth";
 import { useSchoolData } from "@/lib/providers/school-data";
@@ -12,7 +12,8 @@ import {
   type LeaveStatus,
 } from "@/lib/providers/leaves";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
-import { CalendarCheck } from "@/components/shell/Icons";
+import { CalendarCheck, ShieldCheck } from "@/components/shell/Icons";
+import { toIsoDate } from "@/lib/shared/dates";
 
 const MARKS: AttendMark[] = ["P", "A", "L", "H", "T"];
 
@@ -36,7 +37,39 @@ export default function AttendancePage() {
     approvedLeaveDates,
     myLeaves,
     leaves,
+    applyLeave,
   } = useLeaves();
+
+  const [showApplyForm, setShowApplyForm] = useState(false);
+  const [fromDate, setFromDate] = useState(toIsoDate());
+  const [toDate, setToDate] = useState(toIsoDate());
+  const [reason, setReason] = useState("");
+  const [studentName, setStudentName] = useState("");
+  const [flash, setFlash] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.childName) {
+      setStudentName(user.childName);
+    }
+  }, [user]);
+
+  const onApply = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!reason.trim() || !fromDate || !toDate || !user) return;
+    const who =
+      studentName.trim() ||
+      user.childName ||
+      (user.role === "student" ? user.name : user.name);
+    applyLeave({
+      user,
+      studentName: who,
+      fromDate,
+      toDate: toDate < fromDate ? fromDate : toDate,
+      reason,
+    });
+    setReason("");
+    setFlash("Leave submitted — waiting for teacher / admin approval.");
+  };
 
   const teacher = canPostAsTeacher(user);
   const now = new Date();
@@ -333,14 +366,96 @@ export default function AttendancePage() {
               <div className="font-bold text-sm" style={{ marginBottom: 2 }}>Need a day off?</div>
               <div className="text-11 muted">Submit leave application to teacher</div>
             </div>
-            <Link
-              href="/profile"
+            <button
+              type="button"
+              onClick={() => setShowApplyForm((prev) => !prev)}
               className="icon-btn"
-              style={{ background: "var(--primary)", color: "#ffffff", boxShadow: "var(--shadow-pop)", textDecoration: "none", width: 36, height: 36, fontSize: 20 }}
+              style={{
+                background: "var(--primary)",
+                color: "#ffffff",
+                boxShadow: "var(--shadow-pop)",
+                border: "none",
+                cursor: "pointer",
+                width: 36,
+                height: 36,
+                fontSize: 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                borderRadius: "999px",
+                transition: "transform 0.2s ease",
+                transform: showApplyForm ? "rotate(45deg)" : "none",
+              }}
+              title={showApplyForm ? "Close leave form" : "Apply for leave"}
             >
               +
-            </Link>
+            </button>
           </div>
+
+          {showApplyForm && (
+            <form className="card card-pad mt-3 space-y" onSubmit={onApply}>
+              <div>
+                <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                  Apply for leave
+                </p>
+                <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+                  Approved leave automatically marks those dates as Leave (L) on the attendance record.
+                </p>
+              </div>
+              {(user?.role === "parent" || user?.role === "class_teacher" || !user?.role) && (
+                <label>
+                  <span className="text-xs font-medium muted">Student name</span>
+                  <input
+                    className="input"
+                    value={studentName}
+                    onChange={(e) => setStudentName(e.target.value)}
+                    placeholder={user?.childName || "Aarav Sharma"}
+                  />
+                </label>
+              )}
+              <div className="wa-meta-row">
+                <label className="grow">
+                  <span className="text-xs font-medium muted">From date</span>
+                  <input
+                    type="date"
+                    className="input"
+                    value={fromDate}
+                    onChange={(e) => setFromDate(e.target.value)}
+                    required
+                  />
+                </label>
+                <label className="grow">
+                  <span className="text-xs font-medium muted">To date</span>
+                  <input
+                    type="date"
+                    className="input"
+                    value={toDate}
+                    min={fromDate}
+                    onChange={(e) => setToDate(e.target.value)}
+                    required
+                  />
+                </label>
+              </div>
+              <label>
+                <span className="text-xs font-medium muted">Reason for leave</span>
+                <input
+                  className="input"
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Medical illness / family function / travel"
+                  required
+                />
+              </label>
+              {flash && (
+                <p className="text-11 tone-success row" style={{ gap: 6, margin: 0 }}>
+                  <ShieldCheck size={14} /> {flash}
+                </p>
+              )}
+              <button type="submit" className="btn-primary">
+                Submit leave request
+              </button>
+            </form>
+          )}
 
           <h2 className="section-label">Leave history</h2>
           <LeaveHistoryList items={history} />
