@@ -4,13 +4,13 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
 import { useAuth, isSchoolAdmin } from "@/lib/providers/auth";
+import { isSchoolAdminRole, isFamilyRole } from "@schoolconnect/shared";
 import {
   isLimitedAccessPath,
   needsEnrollmentApproval,
   needsSchoolAssignment,
 } from "@/lib/providers/enrollment";
 import { useSchoolData } from "@/lib/providers/school-data";
-import { isFamilyRole } from "@/lib/shared/roles";
 import {
   Home,
   BookOpen,
@@ -22,9 +22,13 @@ import {
   GraduationCap,
   ShieldCheck,
   Menu,
+  Bus,
 } from "@/components/shell/Icons";
 import { AppIcon, type AppIconTone } from "@/components/shell/AppIcon";
 import { LoadingBlock } from "@/components/shell/StatusUI";
+
+import { canAccessRoute } from "@/lib/shared/route-guards";
+import { ROLE_LABEL } from "@schoolconnect/shared";
 
 interface Props {
   children: ReactNode;
@@ -58,9 +62,17 @@ export function PhoneShell({
   const { user, ready, backend } = useAuth();
   const { unreadNotifications, unreadChats, canPostAsTeacher } = useSchoolData();
 
+  const isAllowed = canAccessRoute(user?.role, pathname);
+
   const isFamily = isFamilyRole(user?.role);
-  const isTeacher = canPostAsTeacher(user);
-  const isAdmin = isSchoolAdmin(user) || user?.role === "principal";
+  const isTeacher = user?.role === "class_teacher";
+  const isSubjectTeacher = user?.role === "subject_teacher";
+  const isAdmin = isSchoolAdminRole(user?.role);
+  const isTransportStaff = user?.role === "bus_attendant" || user?.role === "bus_driver";
+  const isTransportMgr = user?.role === "transport_manager";
+  const isAccountant = user?.role === "accountant";
+  const isLibrarian = user?.role === "librarian";
+  const isReceptionist = user?.role === "receptionist";
   const needsSetup =
     needsSchoolAssignment(user, backend) || needsEnrollmentApproval(user);
   const showFees = Boolean(user?.capabilities?.fees);
@@ -87,7 +99,12 @@ export function PhoneShell({
         : isTeacher
           ? [
               { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-              { to: "/class", label: "Class", icon: GraduationCap, tone: "teal" as const },
+              {
+                to: "/attendance",
+                label: "Attend",
+                icon: CalendarCheck,
+                tone: "orange" as const,
+              },
               { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
               {
                 to: "/homework",
@@ -95,32 +112,62 @@ export function PhoneShell({
                 icon: BookOpen,
                 tone: "green" as const,
               },
-              {
-                to: "/attendance",
-                label: "Attend",
-                icon: CalendarCheck,
-                tone: "orange" as const,
-              },
+              { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
             ]
-          : [
-              { to: "/", label: "Home", icon: Home, tone: "blue" as const },
-              { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
-              {
-                to: "/homework",
-                label: "Homework",
-                icon: BookOpen,
-                tone: "orange" as const,
-              },
-              {
-                to: "/attendance",
-                label: "Attend",
-                icon: CalendarCheck,
-                tone: "green" as const,
-              },
-              ...(showFees
-                ? [{ to: "/fees", label: "Fees", icon: Wallet, tone: "teal" as const }]
-                : [{ to: "/more", label: "More", icon: Menu, tone: "slate" as const }]),
-            ]
+          : isSubjectTeacher
+            ? [
+                { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                { to: "/homework", label: "Homework", icon: BookOpen, tone: "green" as const },
+                { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                { to: "/attendance", label: "Attend", icon: CalendarCheck, tone: "orange" as const },
+                { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+              ]
+            : isTransportStaff
+              ? [
+                  { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                  { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
+                  { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                  { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                ]
+              : isTransportMgr
+                ? [
+                    { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                    { to: "/bus", label: "Live Bus", icon: Bus, tone: "teal" as const },
+                    { to: "/admin", label: "Admin", icon: ShieldCheck, tone: "slate" as const },
+                    { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                    { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                  ]
+                : isAccountant
+                  ? [
+                      { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                      { to: "/fees", label: "Fees", icon: Wallet, tone: "green" as const },
+                      { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                      {
+                        to: "/attendance",
+                        label: "Attend",
+                        icon: CalendarCheck,
+                        tone: "orange" as const,
+                      },
+                      { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                    ]
+                  : isLibrarian || isReceptionist
+                    ? [
+                        { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                        { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                        { to: "/circulars", label: "Notice", icon: Bell, tone: "orange" as const },
+                        { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                      ]
+                    : [
+                        { to: "/", label: "Home", icon: Home, tone: "blue" as const },
+                        { to: "/chats", label: "Chats", icon: MessageCircle, tone: "teal" as const },
+                        {
+                          to: "/attendance",
+                          label: "Attend",
+                          icon: CalendarCheck,
+                          tone: "green" as const,
+                        },
+                        { to: "/more", label: "More", icon: Menu, tone: "slate" as const },
+                      ]
   ) as NavItem[];
 
   useEffect(() => {
@@ -213,11 +260,49 @@ export function PhoneShell({
         </header>
       )}
 
-      <main
-        className={`page-main page-x ${showHeader ? "" : "safe-top"} ${hideNav ? "page-main-flush" : ""}`}
-      >
-        {children}
-      </main>
+      {!isAllowed ? (
+        <main className="page-main page-x">
+          <div className="card card-pad mt-6 text-center space-y" style={{ padding: "2.5rem 1.5rem" }}>
+            <div
+              className="mx-auto row"
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                background: "var(--danger-soft)",
+                color: "var(--danger)",
+                fontSize: 24,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              🔒
+            </div>
+            <div>
+              <h2 className="font-bold text-lg" style={{ margin: "12px 0 4px" }}>
+                403 — Access Restricted
+              </h2>
+              <p className="text-xs muted" style={{ margin: 0 }}>
+                Your account role (<strong>{ROLE_LABEL[user.role] || user.role}</strong>) does not have permission to view <code>{pathname}</code>.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="btn-primary mt-4"
+              style={{ margin: "1rem auto 0", maxWidth: 200 }}
+              onClick={() => router.push("/")}
+            >
+              Back to Safety
+            </button>
+          </div>
+        </main>
+      ) : (
+        <main
+          className={`page-main page-x ${showHeader ? "" : "safe-top"} ${hideNav ? "page-main-flush" : ""}`}
+        >
+          {children}
+        </main>
+      )}
 
       {!hideNav && (
         <nav className="bottom-nav">

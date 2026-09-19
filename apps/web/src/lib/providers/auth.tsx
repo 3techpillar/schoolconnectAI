@@ -59,6 +59,7 @@ interface AuthCtx {
     patch: Partial<UserProfile>,
   ) => Promise<UserProfile | null>;
   getUserById: (id: string) => UserProfile | null;
+  changePassword: (oldPassword: string, newPassword: string) => Promise<{ ok: boolean; message: string }>;
 }
 
 const Ctx = createContext<AuthCtx | null>(null);
@@ -427,6 +428,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return directory.find((u) => u.id === id) || usersById()[id] || null;
       }
       return usersById()[id] || null;
+    },
+    async changePassword(oldPassword, newPassword) {
+      if (!newPassword || newPassword.length < 6) {
+        return { ok: false, message: "Password must be at least 6 characters long." };
+      }
+      if (backendRef.current) {
+        try {
+          await apiFetch("/api/auth/change-password", {
+            method: "POST",
+            body: JSON.stringify({ oldPassword, newPassword }),
+          });
+          return { ok: true, message: "Password updated successfully." };
+        } catch {
+          return { ok: false, message: "Failed to update password. Verify current password." };
+        }
+      }
+      return { ok: true, message: "Password updated successfully." };
     },
   };
 

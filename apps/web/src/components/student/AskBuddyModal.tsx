@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 
 interface AskBuddyModalProps {
@@ -8,6 +8,7 @@ interface AskBuddyModalProps {
   onClose: () => void;
   studentName?: string;
   onRewardXp?: (amount: number) => void;
+  initialQuery?: string;
 }
 
 interface Message {
@@ -29,6 +30,7 @@ export function AskBuddyModal({
   onClose,
   studentName = "Aarav",
   onRewardXp,
+  initialQuery,
 }: AskBuddyModalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -40,6 +42,12 @@ export function AskBuddyModal({
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialQuery) {
+      handleSend(initialQuery);
+    }
+  }, [isOpen, initialQuery]);
 
   if (!isOpen) return null;
 

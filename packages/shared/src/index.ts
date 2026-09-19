@@ -11,6 +11,9 @@ export {
   canBroadcastNotification,
 } from "./roles";
 
+export type { Resource, Action, Scope, PermissionRule } from "./rbac";
+export { ROLE_PERMISSIONS, hasPermission } from "./rbac";
+
 export {
   parseClassName,
   parseClassLabel,

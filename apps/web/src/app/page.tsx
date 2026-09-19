@@ -34,7 +34,10 @@ import {
   ShieldCheck,
   FileText,
 } from "@/components/shell/Icons";
+import Image from "next/image";
 import { AdventureWorldView } from "@/components/student/AdventureWorldView";
+import { MascotCompanion } from "@/components/student/MascotCompanion";
+import { AskBuddyModal } from "@/components/student/AskBuddyModal";
 
 export default function HomePage() {
   const { user, ready, backend } = useAuth();
@@ -67,6 +70,14 @@ export default function HomePage() {
   const [hwStats, setHwStats] = useState({ label: "0", hint: "—" });
   const [homeExtraReady, setHomeExtraReady] = useState(false);
   const [viewMode, setViewMode] = useState<"auto" | "adventure" | "desk">("auto");
+  const [isBuddyOpen, setIsBuddyOpen] = useState(false);
+  const [rewardToast, setRewardToast] = useState<string | null>(null);
+
+  const triggerReward = (pts: number, msg: string) => {
+    engage.awardXp?.(pts, msg);
+    setRewardToast(`✨ +${pts} XP! ${msg}`);
+    setTimeout(() => setRewardToast(null), 3200);
+  };
 
   useEffect(() => {
     if (ready && !user) router.replace("/auth");
@@ -212,7 +223,7 @@ export default function HomePage() {
     teacherClass.roster.length - teacherClass.markedCount;
 
   const isStudentUser = Boolean(studentSurface || user?.role === "student");
-  const showAdventure = viewMode === "adventure" || (viewMode === "auto" && isStudentUser);
+  const showAdventure = isStudentUser && viewMode === "adventure";
 
   if (showAdventure && user) {
     return (
@@ -230,33 +241,35 @@ export default function HomePage() {
   return (
     <PhoneShell subtitle={subtitle} title={title}>
       <section className="home-hero-card">
-        {/* Switch to Adventure Mode Banner for Admins/Teachers/Parents */}
-        <div style={{ marginBottom: 12 }}>
-          <button
-            type="button"
-            onClick={() => setViewMode("adventure")}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "0.65rem 0.95rem",
-              borderRadius: "14px",
-              background: "linear-gradient(135deg, #4338CA 0%, #7C3AED 100%)",
-              color: "#ffffff",
-              border: "none",
-              fontWeight: 800,
-              fontSize: "0.82rem",
-              cursor: "pointer",
-              boxShadow: "0 6px 18px -4px rgba(99, 102, 241, 0.4)",
-            }}
-          >
-            <span>🎮 Student Adventure World (Preview)</span>
-            <span style={{ background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 999, fontSize: "0.72rem" }}>
-              Explore 🚀
-            </span>
-          </button>
-        </div>
+        {/* Switch to Adventure Mode Banner - visible only for Student View */}
+        {isStudentUser && (
+          <div style={{ marginBottom: 12 }}>
+            <button
+              type="button"
+              onClick={() => setViewMode("adventure")}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                padding: "0.65rem 0.95rem",
+                borderRadius: "14px",
+                background: "linear-gradient(135deg, #4338CA 0%, #7C3AED 100%)",
+                color: "#ffffff",
+                border: "none",
+                fontWeight: 800,
+                fontSize: "0.82rem",
+                cursor: "pointer",
+                boxShadow: "0 6px 18px -4px rgba(99, 102, 241, 0.4)",
+              }}
+            >
+              <span>🎮 Student Adventure World (Preview)</span>
+              <span style={{ background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: 999, fontSize: "0.72rem" }}>
+                Explore 🚀
+              </span>
+            </button>
+          </div>
+        )}
 
         <div className="row" style={{ alignItems: "center" }}>
           <div className="avatar" style={{ width: 52, height: 52, borderRadius: 16, fontSize: 18, fontWeight: 800 }}>
@@ -311,24 +324,53 @@ export default function HomePage() {
       </section>
 
       {isFamily && (
-        <div className="hero-card mt-3">
-          <div className="hero-text grow">
-            <div className="hero-kicker">{metaLine || "Radoms School"}</div>
-            <div className="hero-title">
-              Ready for<br />today, {focusName.split(" ")[0]}?
+        <>
+          {/* Gamified Status Bar (Streaks, XP, Level) */}
+          <div className="pwa-game-stats-row mt-2">
+            <div className="game-pill streak-pill-glow" title="Daily streak">
+              <span className="streak-flame">🔥</span>
+              <span className="pill-text font-bold">{engage.streak || 7}d Streak</span>
             </div>
-            <span className="streak-chip">🔥 {engage.streak || 1}-day streak</span>
-          </div>
-          <div className="mascot">
-            <div className="mascot-body">
-              <div className="eye l" />
-              <div className="eye r" />
-              <div className="blush l" />
-              <div className="blush r" />
-              <div className="smile" />
+            <div className="game-pill xp-pill-glow" title="Total Experience Points">
+              <span className="xp-star">⭐</span>
+              <span className="pill-text font-bold">{(engage.xp || 1250).toLocaleString()} XP</span>
+            </div>
+            <div className="game-pill level-pill-glow" title="Level Progress">
+              <span className="level-badge">Lv {engage.level || 7}</span>
+              <div className="mini-progress-track">
+                <div
+                  className="mini-progress-fill"
+                  style={{ width: `${engage.levelProgress || 65}%` }}
+                />
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* 3D Student Hero Banner Card */}
+          <section className="student-home-hero-card">
+            <div className="student-home-banner-wrap">
+              <Image
+                src="/assets/home/student_hero.jpg"
+                alt="SchoolConnect Student Learning Adventure"
+                width={640}
+                height={360}
+                priority
+                className="student-home-banner-img"
+              />
+              <div className="student-home-banner-gradient">
+                <span className="student-hero-tag">✨ STUDENT LEARNING HUB</span>
+                <h2 className="student-hero-greeting">
+                  Ready for today, {focusName.split(" ")[0]}? 🚀
+                </h2>
+                <p className="student-hero-subtitle">
+                  {pendingHw > 0
+                    ? `${pendingHw} homework quest${pendingHw > 1 ? "s" : ""} waiting · keep the flame alive!`
+                    : "All missions up to date · earn extra XP today!"}
+                </p>
+              </div>
+            </div>
+          </section>
+        </>
       )}
 
       {isAdmin && (
@@ -470,248 +512,275 @@ export default function HomePage() {
 
       {isFamily && (
         <>
-          {studentSurface ? (
-            <Link href="/engage" className="engage-home-card mt-4">
-              <div className="row" style={{ justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <p className="text-11" style={{ margin: 0, opacity: 0.85 }}>
-                    Learning Zone
-                  </p>
-                  <p className="font-semibold text-15" style={{ margin: "4px 0 0" }}>
-                    {engage.xp} XP · Lv {engage.level}
-                  </p>
-                  <p className="text-11" style={{ margin: "4px 0 0", opacity: 0.9 }}>
-                    {missionsLeft > 0
-                      ? `${missionsLeft} missions waiting · tap to play`
-                      : "All missions done — claim next challenge"}
-                  </p>
-                </div>
-                <div
-                  className="mini-xp-ring"
-                  style={{ ["--p" as string]: String(engage.levelProgress) }}
-                >
-                  <span>{engage.streak}d</span>
-                </div>
-              </div>
-            </Link>
-          ) : (
-            <section className="list-hero list-hero-blue mt-4">
-              <p className="list-hero-kicker">Parent view</p>
-              <h2 className="list-hero-title">
-                {user.childName?.split(" ")[0] || "Your child"}&apos;s school day
-              </h2>
-              <p className="list-hero-body">
-                Same tools as your child — attendance, report and progress stay on top.
-              </p>
-            </section>
-          )}
-
-          {guardianSurface ? (
-            <section className="trust-highlights">
-              {[
-                {
-                  href: "/attendance",
-                  icon: CalendarCheck,
-                  label: "Attendance",
-                  value: attendance.label,
-                  hint: attendance.hint,
-                  tone: "green" as const,
-                },
-                {
-                  href: "/report",
-                  icon: FileText,
-                  label: "Report",
-                  value: user.classHistory?.[0]?.result
-                    ? user.classHistory[0].result === "pending"
-                      ? "In term"
-                      : user.classHistory[0].result
-                    : "View",
-                  hint: user.classHistory?.[0]?.sessionLabel || "This year",
-                  tone: "blue" as const,
-                },
-                {
-                  href: "/engage",
-                  icon: Sparkles,
-                  label: "Progress",
-                  value: `Lv ${engage.level}`,
-                  hint: `${engage.xp} XP · ${engage.streak}-day streak`,
-                  tone: "yellow" as const,
-                },
-              ].map((item) => (
-                <Link key={item.label} href={item.href} className={`trust-card tone-${item.tone}`}>
-                  <AppIcon icon={item.icon} tone={item.tone} size={18} />
-                  <p className="text-11 muted" style={{ margin: "8px 0 0" }}>
-                    {item.label}
-                  </p>
-                  <p className="trust-card-value">{item.value}</p>
-                  <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
-                    {item.hint}
-                  </p>
-                </Link>
-              ))}
-            </section>
-          ) : null}
-
-          {showBus ? (
-            <Link href="/bus" className="bus-home-card mt-4">
-              <div className="row" style={{ justifyContent: "space-between", gap: 12 }}>
-                <div>
-                  <p className="text-11" style={{ margin: 0, opacity: 0.85 }}>
-                    Live bus tracking
-                  </p>
-                  <p className="font-semibold text-15" style={{ margin: "4px 0 0" }}>
-                    {bus.etaToHome} min to {bus.homeStop.shortName}
-                  </p>
-                  <p className="text-11" style={{ margin: "4px 0 0", opacity: 0.9 }}>
-                    {bus.stopsBetween} stop{bus.stopsBetween === 1 ? "" : "s"} away · open map
-                  </p>
-                </div>
-                <AppIcon icon={Bus} tone="blue" size={22} />
-              </div>
-            </Link>
-          ) : null}
-
-          <div className="section-title mt-4" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 16, fontWeight: 600 }}>Quick access</span>
+          {/* Interactive Mascot Companion */}
+          <div className="mt-3">
+            <MascotCompanion
+              studentName={focusName.split(" ")[0]}
+              streak={engage.streak || 7}
+              xp={engage.xp || 1250}
+              level={engage.level || 7}
+              onOpenBuddyChat={() => setIsBuddyOpen(true)}
+            />
           </div>
-          <div className="quick-row">
+
+          {/* 3D Cartoon Quick Actions Header */}
+          <div className="section-title-row mt-4" style={{ marginBottom: 4 }}>
+            <h3 className="pwa-section-title" style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              Student Hub 🚀
+            </h3>
+            <span className="pwa-section-kicker">3D Quick Access</span>
+          </div>
+
+          {/* 3D Action Cards Grid */}
+          <div className="student-3d-grid">
+            {/* Homework Quests */}
+            <Link href="/homework" className="student-action-card">
+              <div className="student-card-top">
+                <div className="student-icon-3d-wrap">
+                  <Image
+                    src="/assets/icons/icon_homework_3d.jpg"
+                    alt="Homework Quests"
+                    width={52}
+                    height={52}
+                    className="student-icon-3d-img"
+                  />
+                </div>
+                <span className="student-card-badge badge-amber">
+                  {pendingHw > 0 ? `${pendingHw} Due` : "All Done ✓"}
+                </span>
+              </div>
+              <div>
+                <h4 className="student-card-title">Homework</h4>
+                <p className="student-card-desc">
+                  <span>{hwLabel} to solve</span>
+                  <span className="student-card-arrow">→</span>
+                </p>
+              </div>
+            </Link>
+
+            {/* Bus Tracker */}
             {showBus && (
-              <Link href="/bus" className="quick-pill">
-                <div className="qicon" style={{ background: "var(--info-soft)" }}>
-                  <Bus size={22} style={{ color: "var(--info)" }} />
+              <Link href="/bus" className="student-action-card">
+                <div className="student-card-top">
+                  <div className="student-icon-3d-wrap">
+                    <Image
+                      src="/assets/icons/icon_bus_3d.jpg"
+                      alt="School Bus Radar"
+                      width={52}
+                      height={52}
+                      className="student-icon-3d-img"
+                    />
+                  </div>
+                  <span className="student-card-badge badge-green">
+                    {bus.etaToHome}m ETA
+                  </span>
                 </div>
-                <span>Bus</span>
+                <div>
+                  <h4 className="student-card-title">Bus Radar</h4>
+                  <p className="student-card-desc">
+                    <span>{bus.stopsBetween} stops away</span>
+                    <span className="student-card-arrow">→</span>
+                  </p>
+                </div>
               </Link>
             )}
-            <Link href={isTeacher ? "/class" : "/attendance"} className="quick-pill">
-              <div className="qicon" style={{ background: "var(--accent-soft)" }}>
-                <CalendarCheck size={22} style={{ color: "var(--accent-dark)" }} />
+
+            {/* Daily Attendance */}
+            <Link href="/attendance" className="student-action-card">
+              <div className="student-card-top">
+                <div className="student-icon-3d-wrap">
+                  <Image
+                    src="/assets/icons/icon_attendance_3d.jpg"
+                    alt="Daily Attendance"
+                    width={52}
+                    height={52}
+                    className="student-icon-3d-img"
+                  />
+                </div>
+                <span className="student-card-badge badge-blue">
+                  {attendance.label !== "—" ? attendance.label : "Present"}
+                </span>
               </div>
-              <span>{isTeacher ? "Class" : "Attend"}</span>
+              <div>
+                <h4 className="student-card-title">Attendance</h4>
+                <p className="student-card-desc">
+                  <span>{attendance.hint}</span>
+                  <span className="student-card-arrow">→</span>
+                </p>
+              </div>
             </Link>
+
+            {/* Ask AI Study Buddy */}
+            <div
+              className="student-action-card"
+              onClick={() => setIsBuddyOpen(true)}
+              role="button"
+              tabIndex={0}
+              style={{ cursor: "pointer" }}
+            >
+              <div className="student-card-top">
+                <div className="student-icon-3d-wrap">
+                  <Image
+                    src="/assets/icons/icon_ai_buddy_3d.jpg"
+                    alt="AI Study Buddy"
+                    width={52}
+                    height={52}
+                    className="student-icon-3d-img"
+                  />
+                </div>
+                <span className="student-card-badge badge-purple">
+                  Instant ✨
+                </span>
+              </div>
+              <div>
+                <h4 className="student-card-title">AI Study Pal</h4>
+                <p className="student-card-desc">
+                  <span>Solve doubts 24/7</span>
+                  <span className="student-card-arrow">→</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Circulars & Notices */}
             {showCirculars && (
-              <Link href="/circulars" className="quick-pill">
-                <div className="qicon" style={{ background: "var(--success-soft)" }}>
-                  <Megaphone size={22} style={{ color: "var(--success)" }} />
+              <Link href="/circulars" className="student-action-card">
+                <div className="student-card-top">
+                  <div className="student-icon-3d-wrap">
+                    <Image
+                      src="/assets/icons/icon_notice_3d.jpg"
+                      alt="Notice Board"
+                      width={52}
+                      height={52}
+                      className="student-icon-3d-img"
+                    />
+                  </div>
+                  <span className="student-card-badge badge-coral">
+                    Circulars
+                  </span>
                 </div>
-                <span>Notices</span>
+                <div>
+                  <h4 className="student-card-title">Notices</h4>
+                  <p className="student-card-desc">
+                    <span>Events & updates</span>
+                    <span className="student-card-arrow">→</span>
+                  </p>
+                </div>
               </Link>
             )}
-            <Link href="/ai" className="quick-pill">
-              <div className="qicon" style={{ background: "var(--primary-soft)" }}>
-                <Sparkles size={22} style={{ color: "var(--primary)" }} />
-              </div>
-              <span>AI Buddy</span>
-            </Link>
-            {showFees && (
-              <Link href="/fees" className="quick-pill">
-                <div className="qicon" style={{ background: "var(--warning-soft)" }}>
-                  <Wallet size={22} style={{ color: "var(--warning)" }} />
+
+            {/* Report Card */}
+            <Link href="/report" className="student-action-card">
+              <div className="student-card-top">
+                <div className="student-icon-3d-wrap">
+                  <Image
+                    src="/assets/icons/icon_report_3d.jpg"
+                    alt="Report Card"
+                    width={52}
+                    height={52}
+                    className="student-icon-3d-img"
+                  />
                 </div>
-                <span>Fees</span>
-              </Link>
-            )}
-            <Link href="/report" className="quick-pill">
-              <div className="qicon" style={{ background: "var(--surface-tint)" }}>
-                <FileText size={22} style={{ color: "var(--primary)" }} />
+                <span className="student-card-badge badge-purple">
+                  {user.classHistory?.[0]?.result || "Term 1"}
+                </span>
               </div>
-              <span>Report</span>
+              <div>
+                <h4 className="student-card-title">Report Card</h4>
+                <p className="student-card-desc">
+                  <span>Scores & progress</span>
+                  <span className="student-card-arrow">→</span>
+                </p>
+              </div>
             </Link>
           </div>
 
-          <h2 className="section-label">
-            {studentSurface ? "Your day" : "Today at a glance"}
-          </h2>
-          <section className="stats-grid">
-            {guardianSurface ? null : (
-              <Link href="/attendance">
-                <StatCard
-                  icon={CalendarCheck}
-                  label="Attendance"
-                  value={attendance.label}
-                  tone="tone-success"
-                  hint={attendance.hint}
-                />
-              </Link>
-            )}
-            {studentSurface ? (
-              <Link href="/report">
-                <StatCard
-                  icon={FileText}
-                  label="Report"
-                  value={
-                    user.classHistory?.[0]?.result === "pending"
-                      ? "In term"
-                      : user.classHistory?.[0]?.result || "View"
-                  }
-                  tone="tone-info"
-                  hint={user.classHistory?.[0]?.sessionLabel || "Academic snapshot"}
-                />
-              </Link>
-            ) : null}
-            {showFees ? (
-              <Link href="/fees">
-                <StatCard
-                  icon={Wallet}
-                  label="Fees due"
-                  value={feesDue.amount}
-                  tone="tone-warning"
-                  hint={feesDue.hint}
-                />
-              </Link>
-            ) : null}
-            <Link href="/homework">
-              <StatCard
-                icon={BookOpen}
-                label="Homework"
-                value={hwLabel}
-                tone="tone-info"
-                hint={hwHint}
-              />
-            </Link>
-            <Link href="/bus">
-              <StatCard
-                icon={Bus}
-                label="Bus ETA"
-                value={`${bus.etaToHome} min`}
-                tone="tone-primary"
-                hint={`${bus.stopsBetween} stops · ${bus.homeStop.shortName}`}
-              />
-            </Link>
-          </section>
+          {/* Today's Quests & Homework Missions */}
+          <div className="student-home-quests-card">
+            <div className="student-quests-header">
+              <h3 className="student-quests-title">
+                Today&apos;s Quests 🎯
+              </h3>
+              <span className="student-quests-pill">
+                {engage.missions.filter((m) => m.done).length}/{engage.missions.length} Done
+              </span>
+            </div>
+            <ul className="missions-checklist">
+              {engage.missions.map((m) => (
+                <li
+                  key={m.id}
+                  className={`mission-item ${m.done ? "completed" : ""}`}
+                  onClick={() => {
+                    if (!m.done) {
+                      engage.completeMission(m.id);
+                      triggerReward(m.xp, `Quest Completed: ${m.title}`);
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className={`mission-checkbox ${m.done ? "checked" : ""}`}>
+                    {m.done ? "✓" : ""}
+                  </div>
+                  <div className="mission-content">
+                    <p className="mission-title">{m.title}</p>
+                    <p className="mission-hint">{m.hint}</p>
+                  </div>
+                  <span className={`mission-reward-badge ${m.done ? "claimed" : ""}`}>
+                    +{m.xp} XP
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-          <div className="space-y" style={{ gap: 10, marginTop: 12 }}>
-            <Link href="/engage" className="ai-banner" style={{ marginTop: 0 }}>
-              <div className="ai-banner-inner">
-                <div className="ai-icon">
-                  <Sparkles size={20} />
-                </div>
-                <div className="grow">
-                  <p className="font-semibold text-15">Open Learning Zone</p>
-                  <p className="text-xs" style={{ opacity: 0.8, marginTop: 2 }}>
-                    Streaks, badges, focus timer & challenges
-                  </p>
-                </div>
-                <ArrowRight size={20} />
-              </div>
-            </Link>
-            <Link href="/ai" className="ai-banner" style={{ marginTop: 0 }}>
-              <div className="ai-banner-inner">
-                <div className="ai-icon">
-                  <Sparkles size={20} />
-                </div>
-                <div className="grow">
-                  <p className="font-semibold text-15">Ask SchoolConnect AI</p>
-                  <p className="text-xs" style={{ opacity: 0.8, marginTop: 2 }}>
-                    Attendance, homework, fees & circulars
-                  </p>
-                </div>
-                <ArrowRight size={20} />
-              </div>
-            </Link>
+          {/* Adventure Learning World Banner */}
+          <Link href="/engage" className="adventure-portal-banner">
+            <div className="adventure-portal-icon">
+              🏰
+            </div>
+            <div className="adventure-portal-body">
+              <span className="adventure-portal-tag">🎮 GAMIFIED LEARNING</span>
+              <h3 className="adventure-portal-title">Enter Subject Kingdoms</h3>
+              <p className="adventure-portal-desc">
+                Math, Science, English, Tech & Badges Showcase
+              </p>
+            </div>
+            <div className="adventure-portal-btn">
+              Play Zone →
+            </div>
+          </Link>
+
+          {/* Ask Buddy Instant Card */}
+          <div
+            className="buddy-instant-card"
+            onClick={() => setIsBuddyOpen(true)}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="buddy-instant-avatar">
+              <Image
+                src="/assets/icons/icon_ai_buddy_3d.jpg"
+                alt="AI Study Buddy"
+                width={52}
+                height={52}
+                className="rounded-full"
+              />
+            </div>
+            <div className="buddy-instant-body">
+              <h4 className="buddy-instant-title">
+                Stuck on a problem? 💡
+              </h4>
+              <p className="buddy-instant-desc">
+                Ask Buddy AI for instant step-by-step help and earn +20 XP!
+              </p>
+            </div>
+            <div className="buddy-instant-cta">
+              Ask AI
+            </div>
           </div>
         </>
       )}
+
 
       <h2 className="section-label">Recent</h2>
       <ul className="feed">
@@ -780,6 +849,21 @@ export default function HomePage() {
           </li>
         )}
       </ul>
+
+      {/* Toast Alert */}
+      {rewardToast && (
+        <div className="adventure-xp-toast" role="status">
+          <span>{rewardToast}</span>
+        </div>
+      )}
+
+      {/* Ask Buddy AI Modal Drawer */}
+      <AskBuddyModal
+        isOpen={isBuddyOpen}
+        onClose={() => setIsBuddyOpen(false)}
+        studentName={focusName.split(" ")[0]}
+        onRewardXp={(pts) => triggerReward(pts, "Buddy AI Doubts Solved!")}
+      />
     </PhoneShell>
   );
 }

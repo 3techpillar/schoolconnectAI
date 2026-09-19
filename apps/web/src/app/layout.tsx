@@ -1,13 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import {
+  AcademicStructureProvider,
   AdminDataProvider,
   AuthProvider,
   BusTrackProvider,
   EnrollmentProvider,
   LeavesProvider,
+  RBACProvider,
   SchoolDataProvider,
+  StaffAttendanceProvider,
   StudentEngageProvider,
   TeacherClassProvider,
+  TimetableProvider,
 } from "@/lib/providers";
 import "./globals.css";
 
@@ -44,19 +48,27 @@ export default function RootLayout({
       </head>
       <body>
         <AuthProvider>
-          <SchoolDataProvider>
-            <TeacherClassProvider>
-              <StudentEngageProvider>
-                <LeavesProvider>
-                  <EnrollmentProvider>
-                    <BusTrackProvider>
-                      <AdminDataProvider>{children}</AdminDataProvider>
-                    </BusTrackProvider>
-                  </EnrollmentProvider>
-                </LeavesProvider>
-              </StudentEngageProvider>
-            </TeacherClassProvider>
-          </SchoolDataProvider>
+          <RBACProvider>
+            <AcademicStructureProvider>
+              <SchoolDataProvider>
+                <TeacherClassProvider>
+                  <StudentEngageProvider>
+                    <LeavesProvider>
+                      <StaffAttendanceProvider>
+                        <TimetableProvider>
+                          <EnrollmentProvider>
+                            <BusTrackProvider>
+                              <AdminDataProvider>{children}</AdminDataProvider>
+                            </BusTrackProvider>
+                          </EnrollmentProvider>
+                        </TimetableProvider>
+                      </StaffAttendanceProvider>
+                    </LeavesProvider>
+                  </StudentEngageProvider>
+                </TeacherClassProvider>
+              </SchoolDataProvider>
+            </AcademicStructureProvider>
+          </RBACProvider>
         </AuthProvider>
       </body>
     </html>

@@ -14,7 +14,20 @@ import { useSchoolData } from "@/lib/providers/school-data";
 import { apiFetch } from "@/lib/shared/api-client";
 import { nextClassName } from "@/lib/shared/class-utils";
 
-export type AttendMark = "P" | "A" | "L" | "H" | "T";
+export type AttendMark = "P" | "A" | "L" | "H" | "T" | "E" | "HOL";
+
+export interface AttendanceAuditLog {
+  id: string;
+  dateKey: string;
+  studentId?: string;
+  studentName?: string;
+  oldMark?: AttendMark;
+  newMark?: AttendMark;
+  unlockedBy: string;
+  unlockedRole: string;
+  reason: string;
+  timestamp: number;
+}
 
 export interface RosterStudent {
   id: string;
@@ -40,6 +53,8 @@ export interface CircularItem {
 interface TeacherClassState {
   roster: RosterStudent[];
   attendanceByDay: Record<string, Record<string, AttendMark>>;
+  unlockedDates: Record<string, boolean>;
+  auditLogs: AttendanceAuditLog[];
   circulars: CircularItem[];
 }
 
@@ -49,8 +64,10 @@ interface TeacherClassCtx extends TeacherClassState {
   todayMarks: Record<string, AttendMark>;
   markedCount: number;
   presentCount: number;
-  setMark: (studentId: string, mark: AttendMark, dateKey?: string) => void;
-  markAllPresent: (dateKey?: string) => void;
+  isDateLocked: (dateKey: string) => boolean;
+  unlockRosterDate: (dateKey: string, reason: string, user: UserProfile) => boolean;
+  setMark: (studentId: string, mark: AttendMark, dateKey?: string, user?: UserProfile, reason?: string) => void;
+  markAllPresent: (dateKey?: string, user?: UserProfile) => void;
   /** Reload roster + attendance from API / local storage */
   refreshDesk: () => Promise<void>;
   addCircular: (input: {
@@ -182,6 +199,17 @@ function defaultState(): TeacherClassState {
   return {
     roster,
     attendanceByDay: { [day]: marks },
+    unlockedDates: {},
+    auditLogs: [
+      {
+        id: "audit-seed-1",
+        dateKey: day,
+        unlockedBy: "Dr. Anita Singh",
+        unlockedRole: "principal",
+        reason: "Initial roll-call initialization audit record",
+        timestamp: Date.now() - 1000 * 60 * 60 * 2,
+      },
+    ],
     circulars: seedCirculars(),
   };
 }
@@ -201,6 +229,8 @@ function loadState(): TeacherClassState {
       ...defaultState(),
       ...parsed,
       roster,
+      unlockedDates: parsed.unlockedDates || {},
+      auditLogs: parsed.auditLogs?.length ? parsed.auditLogs : defaultState().auditLogs,
       circulars: parsed.circulars?.length ? parsed.circulars : seedCirculars(),
     };
   } catch {
@@ -225,11 +255,12 @@ export function TeacherClassProvider({ children }: { children: ReactNode }) {
         attendanceByDay: Record<string, Record<string, AttendMark>>;
         circulars: CircularItem[];
       }>(`/api/class-desk${q}`);
-      setState({
+      setState((prev) => ({
+        ...prev,
         roster: res.roster,
         attendanceByDay: res.attendanceByDay,
         circulars: res.circulars,
-      });
+      }));
       return;
     }
     if (!backend) {
@@ -277,8 +308,57 @@ export function TeacherClassProvider({ children }: { children: ReactNode }) {
     [backend],
   );
 
+  const isDateLocked = useCallback(
+    (dateKey: string) => {
+      const today = todayKey();
+      if (dateKey >= today) return false;
+      return !state.unlockedDates[dateKey];
+    },
+    [state.unlockedDates],
+  );
+
+  const unlockRosterDate = useCallback(
+    (dateKey: string, reason: string, actor: UserProfile) => {
+      if (!reason.trim()) return false;
+      const canUnlock =
+        actor.role === "principal" ||
+        actor.role === "vice_principal" ||
+        actor.role === "admin" ||
+        actor.role === "super_admin";
+      if (!canUnlock) return false;
+
+      commit((prev) => {
+        const newLog: AttendanceAuditLog = {
+          id: crypto.randomUUID(),
+          dateKey,
+          unlockedBy: actor.name,
+          unlockedRole: actor.role,
+          reason: reason.trim(),
+          timestamp: Date.now(),
+        };
+        return {
+          ...prev,
+          unlockedDates: { ...prev.unlockedDates, [dateKey]: true },
+          auditLogs: [newLog, ...prev.auditLogs],
+        };
+      });
+      return true;
+    },
+    [commit],
+  );
+
   const setMark = useCallback(
-    (studentId: string, mark: AttendMark, dateKey = day) => {
+    (
+      studentId: string,
+      mark: AttendMark,
+      dateKey = day,
+      actor?: UserProfile,
+      reason?: string,
+    ) => {
+      if (isDateLocked(dateKey) && (!actor || (actor.role !== "principal" && actor.role !== "admin" && actor.role !== "super_admin"))) {
+        return;
+      }
+
       if (backend) {
         void apiFetch("/api/class-desk", {
           method: "PATCH",
@@ -288,18 +368,40 @@ export function TeacherClassProvider({ children }: { children: ReactNode }) {
           }),
         }).catch(() => undefined);
       }
-      commit((prev) => ({
-        ...prev,
-        attendanceByDay: {
-          ...prev.attendanceByDay,
-          [dateKey]: {
-            ...(prev.attendanceByDay[dateKey] || {}),
-            [studentId]: mark,
+      commit((prev) => {
+        const student = prev.roster.find((s) => s.id === studentId);
+        const oldMark = prev.attendanceByDay[dateKey]?.[studentId];
+        const newAuditLogs = [...prev.auditLogs];
+
+        if (actor && isDateLocked(dateKey) && oldMark !== mark) {
+          newAuditLogs.unshift({
+            id: crypto.randomUUID(),
+            dateKey,
+            studentId,
+            studentName: student?.name,
+            oldMark,
+            newMark: mark,
+            unlockedBy: actor.name,
+            unlockedRole: actor.role,
+            reason: reason?.trim() || "Historic attendance override",
+            timestamp: Date.now(),
+          });
+        }
+
+        return {
+          ...prev,
+          attendanceByDay: {
+            ...prev.attendanceByDay,
+            [dateKey]: {
+              ...(prev.attendanceByDay[dateKey] || {}),
+              [studentId]: mark,
+            },
           },
-        },
-      }));
+          auditLogs: newAuditLogs,
+        };
+      });
     },
-    [commit, day, backend, user?.className],
+    [commit, day, backend, user?.className, isDateLocked],
   );
 
   const markAllPresent = useCallback(
@@ -369,11 +471,12 @@ export function TeacherClassProvider({ children }: { children: ReactNode }) {
               className: actor.className || "6-B",
             }),
           });
-          setState({
+          setState((prev) => ({
+            ...prev,
             roster: res.roster,
             attendanceByDay: res.attendanceByDay,
             circulars: res.circulars,
-          });
+          }));
           await refreshNotifications();
           return true;
         } catch {
@@ -493,6 +596,8 @@ export function TeacherClassProvider({ children }: { children: ReactNode }) {
       todayMarks: marks,
       markedCount: Object.keys(marks).length,
       presentCount: Object.values(marks).filter((m) => m === "P").length,
+      isDateLocked,
+      unlockRosterDate,
       setMark,
       markAllPresent,
       refreshDesk,
@@ -505,6 +610,8 @@ export function TeacherClassProvider({ children }: { children: ReactNode }) {
     state,
     ready,
     day,
+    isDateLocked,
+    unlockRosterDate,
     setMark,
     markAllPresent,
     refreshDesk,
