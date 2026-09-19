@@ -28,9 +28,6 @@ jobs:
       - name: Typecheck Server
         run: npm run typecheck -w @schoolconnect/server
 
-      - name: Build Server
-        run: npm run build:server
-
   # ── Step 2: Deploy to VPS (only if checks pass) ──
   deploy:
     needs: build-check
@@ -43,7 +40,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          command_timeout: 30m
+          command_timeout: 15m
 
           script: |
             set -e
@@ -57,12 +54,10 @@ jobs:
 
             echo "» Fetching latest code..."
             git fetch origin server_prod
-
-            echo "» Resetting to latest server_prod..."
             git reset --hard origin/server_prod
 
             echo "» Installing dependencies..."
-            npm ci
+            npm install --prefer-offline --no-audit --progress=false
 
             echo "» Building server..."
             if npm run build:server; then
@@ -79,3 +74,4 @@ jobs:
             pm2 save
 
             echo "═══ Backend Server Deployment Successful! ═══"
+

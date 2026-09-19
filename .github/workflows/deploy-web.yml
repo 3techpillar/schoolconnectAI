@@ -6,8 +6,8 @@ on:
       - web_prod
 
 jobs:
-  # ── Step 1: Build & Test in CI ──
-  build-check:
+  # ── Step 1: Build & Test in CI (Guarantees zero broken builds reach VPS) ──
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -29,11 +29,27 @@ jobs:
         run: npm test
 
       - name: Build Web (production)
-        run: npm run build:production
+        run: |
+          export NEXT_TELEMETRY_DISABLED=1
+          npm run build:production
 
-  # ── Step 2: Deploy to VPS (only if build passes) ──
+      - name: Package Build Output
+        run: |
+          tar -czf web-build.tgz apps/web/.next
+
+      - name: Upload Build Bundle to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_IP }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          source: "web-build.tgz"
+          target: "/var/www/schoolconnectAI/"
+
+  # ── Step 2: Deploy to VPS (Runs ONLY if CI build succeeded) ──
   deploy:
-    needs: build-check
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Deploy via SSH
@@ -43,7 +59,7 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
-          command_timeout: 30m
+          command_timeout: 10m
 
           script: |
             set -e
@@ -57,20 +73,16 @@ jobs:
 
             echo "» Fetching latest code..."
             git fetch origin web_prod
-
-            echo "» Resetting to latest web_prod..."
             git reset --hard origin/web_prod
 
-            echo "» Installing dependencies..."
-            npm ci
-
-            echo "» Building production web app..."
-            if npm run build:production; then
-              echo "✓ Build succeeded"
-            else
-              echo "✗ Build FAILED — keeping old version running"
-              exit 1
+            echo "» Extracting pre-built bundle..."
+            if [ -f "web-build.tgz" ]; then
+              tar -xzf web-build.tgz
+              rm -f web-build.tgz
             fi
+
+            echo "» Installing production dependencies..."
+            npm install --prefer-offline --no-audit --progress=false
 
             echo "» Restarting PM2 process..."
             pm2 restart $PM2_NAME || pm2 start npm --name "$PM2_NAME" -- run start:production
@@ -79,3 +91,5 @@ jobs:
             pm2 save
 
             echo "═══ Web Frontend Deployment Successful! ═══"
+
+
