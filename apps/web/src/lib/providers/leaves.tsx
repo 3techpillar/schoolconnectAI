@@ -15,6 +15,7 @@ import { useSchoolData } from "@/lib/providers/school-data";
 import { apiFetch } from "@/lib/shared/api-client";
 
 export type LeaveStatus = "pending" | "approved" | "rejected";
+export type LeaveCategory = "casual" | "sick" | "duty" | "emergency" | "vacation";
 
 export interface LeaveRequest {
   id: string;
@@ -27,6 +28,8 @@ export interface LeaveRequest {
   fromDate: string;
   toDate: string;
   reason: string;
+  category?: LeaveCategory;
+  attachmentName?: string;
   status: LeaveStatus;
   appliedAt: number;
   reviewedBy?: string;
@@ -48,6 +51,8 @@ interface LeavesCtx {
     fromDate: string;
     toDate: string;
     reason: string;
+    category?: LeaveCategory;
+    attachmentName?: string;
   }) => Promise<LeaveRequest>;
   reviewLeave: (
     id: string,
@@ -196,9 +201,10 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
   }, [authReady, backend, user?.id, user?.schoolId]);
 
   const applyLeave: LeavesCtx["applyLeave"] = useCallback(
-    async ({ user: actor, studentName, fromDate, toDate, reason }) => {
+    async ({ user: actor, studentName, fromDate, toDate, reason, category, attachmentName }) => {
       const isTeacher =
         actor.role === "class_teacher" ||
+        actor.role === "subject_teacher" ||
         actor.role === "principal" ||
         actor.role === "admin";
       const leaveType: "teacher" | "student" = isTeacher ? "teacher" : "student";
@@ -206,7 +212,7 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
       if (backend) {
         const res = await apiFetch<{ leave: LeaveRequest }>("/api/leaves", {
           method: "POST",
-          body: JSON.stringify({ studentName, fromDate, toDate, reason, leaveType }),
+          body: JSON.stringify({ studentName, fromDate, toDate, reason, leaveType, category, attachmentName }),
         });
         setLeaves((prev) => [res.leave, ...prev]);
         return res.leave;
@@ -223,6 +229,8 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
         fromDate,
         toDate,
         reason: reason.trim(),
+        category: category || "casual",
+        attachmentName: attachmentName?.trim(),
         status: "pending",
         appliedAt: Date.now(),
         leaveType,
@@ -236,14 +244,14 @@ export function LeavesProvider({ children }: { children: ReactNode }) {
       if (isTeacher) {
         pushNotification({
           title: "Teacher Leave Application",
-          body: `${actor.name} requested leave (${fromDate} to ${toDate}): ${reason.trim()}`,
+          body: `${actor.name} requested ${category || "casual"} leave (${fromDate} to ${toDate}): ${reason.trim()}`,
           type: "activity",
           href: "/admin",
         });
       } else {
         pushNotification({
           title: "New Student Leave Request",
-          body: `${actor.name} submitted leave for ${studentName.trim()} (${fromDate} to ${toDate}): ${reason.trim()}`,
+          body: `${actor.name} submitted ${category || "casual"} leave for ${studentName.trim()} (${fromDate} to ${toDate}): ${reason.trim()}`,
           type: "activity",
           href: "/attendance",
         });

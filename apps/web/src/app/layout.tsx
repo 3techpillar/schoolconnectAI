@@ -11,6 +11,7 @@ import {
   StaffAttendanceProvider,
   StudentEngageProvider,
   TeacherClassProvider,
+  TimetableProvider,
 } from "@/lib/providers";
 import "./globals.css";
 
@@ -54,11 +55,13 @@ export default function RootLayout({
                   <StudentEngageProvider>
                     <LeavesProvider>
                       <StaffAttendanceProvider>
-                        <EnrollmentProvider>
-                          <BusTrackProvider>
-                            <AdminDataProvider>{children}</AdminDataProvider>
-                          </BusTrackProvider>
-                        </EnrollmentProvider>
+                        <TimetableProvider>
+                          <EnrollmentProvider>
+                            <BusTrackProvider>
+                              <AdminDataProvider>{children}</AdminDataProvider>
+                            </BusTrackProvider>
+                          </EnrollmentProvider>
+                        </TimetableProvider>
                       </StaffAttendanceProvider>
                     </LeavesProvider>
                   </StudentEngageProvider>

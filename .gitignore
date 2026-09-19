@@ -52,3 +52,9 @@ pnpm-debug.log*
 # typescript
 next-env.d.ts
 *.tsbuildinfo
+
+# local development notes
+SYSTEM_IMPLEMENTATION_NOTES.md
+*_NOTES.md
+*.notes.md
+

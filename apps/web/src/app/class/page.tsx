@@ -128,6 +128,10 @@ export default function ClassPage() {
           <AppIcon icon={CalendarCheck} tone="green" size={18} />
           <span className="text-11 font-medium">Attendance</span>
         </Link>
+        <Link href="/timetable" className="quick-btn">
+          <AppIcon icon={CalendarCheck} tone="teal" size={18} />
+          <span className="text-11 font-medium">Timetable</span>
+        </Link>
         <Link href="/homework" className="quick-btn">
           <AppIcon icon={BookOpen} tone="blue" size={18} />
           <span className="text-11 font-medium">Homework</span>
@@ -135,10 +139,6 @@ export default function ClassPage() {
         <Link href="/chats/class-6b" className="quick-btn">
           <AppIcon icon={MessageCircle} tone="teal" size={18} />
           <span className="text-11 font-medium">Class chat</span>
-        </Link>
-        <Link href="/circulars" className="quick-btn">
-          <AppIcon icon={Megaphone} tone="orange" size={18} />
-          <span className="text-11 font-medium">Announce</span>
         </Link>
       </div>
 
