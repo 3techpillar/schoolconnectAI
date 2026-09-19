@@ -1,21 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { PhoneShell } from "@/components/shell/PhoneShell";
-import { useAuth, type UserProfile } from "@/lib/providers/auth";
+import { useAuth } from "@/lib/providers/auth";
 import {
   useTimetable,
   PERIOD_SLOTS,
   type DayOfWeek,
   type TimetableEntry,
-  type SubstitutionRecord,
   type CandidateSubstitute,
 } from "@/lib/providers/timetable";
-import { useLeaves } from "@/lib/providers/leaves";
 import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
-import { CalendarCheck, ShieldCheck } from "@/components/shell/Icons";
+import { CalendarCheck } from "@/components/shell/Icons";
 import { toIsoDate } from "@/lib/shared/dates";
 
 const DAYS: DayOfWeek[] = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -24,8 +21,6 @@ export default function TimetablePage() {
   const { user } = useAuth();
   const {
     ready,
-    entries,
-    substitutions,
     getTimetableForClass,
     getTimetableForTeacher,
     getSubstitutionsForDate,
@@ -34,7 +29,6 @@ export default function TimetablePage() {
     manualAssignSubstitution,
   } = useTimetable();
 
-  const { leaves } = useLeaves();
   const { staffRoster } = useStaffAttendance();
 
   const [selectedDay, setSelectedDay] = useState<DayOfWeek>(() => {

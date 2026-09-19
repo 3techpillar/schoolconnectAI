@@ -131,16 +131,14 @@ const LEADERBOARD = [
 
 export function AdventureWorldView({
   studentName = "Aarav",
-  className = "Class 6-B",
   initialXp = 1250,
   initialStreak = 7,
   initialLevel = 7,
   wrapInPhoneShell = true,
-  onSwitchToParentDesk,
 }: AdventureWorldViewProps) {
   const [xp, setXp] = useState(initialXp);
   const [streak, setStreak] = useState(initialStreak);
-  const [level, setLevel] = useState(initialLevel);
+  const [level] = useState(initialLevel);
   const [missions, setMissions] = useState<Mission[]>(INITIAL_MISSIONS);
   const [checkedInToday, setCheckedInToday] = useState(false);
   const [isBuddyOpen, setIsBuddyOpen] = useState(false);

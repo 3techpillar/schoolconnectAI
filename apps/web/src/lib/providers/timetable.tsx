@@ -9,9 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAuth, type UserProfile, type Role } from "@/lib/providers/auth";
+import { type UserProfile, type Role } from "@/lib/providers/auth";
 import { useSchoolData } from "@/lib/providers/school-data";
-import { useLeaves } from "@/lib/providers/leaves";
 import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import { toIsoDate } from "@/lib/shared/dates";
 
@@ -288,7 +287,6 @@ function loadState(): TimetableState {
 }
 
 export function TimetableProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
   const { pushNotification } = useSchoolData();
   const { staffRoster } = useStaffAttendance();
   const [state, setState] = useState<TimetableState>(defaultState);

@@ -1,14 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { PhoneShell } from "@/components/shell/PhoneShell";
-import { useAuth, type UserProfile } from "@/lib/providers/auth";
+import { useAuth } from "@/lib/providers/auth";
 import { useSchoolData } from "@/lib/providers/school-data";
 import {
   useTeacherClass,
   type AttendMark,
-  type AttendanceAuditLog,
 } from "@/lib/providers/teacher-class";
 import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import {
@@ -51,7 +49,6 @@ export default function AttendancePage() {
   const {
     ready,
     roster,
-    todayMarks,
     presentCount,
     markedCount,
     setMark,
@@ -569,7 +566,7 @@ export default function AttendancePage() {
                     <span className="leave-badge leave-pending">Pending Admin</span>
                   </div>
                   <p className="text-xs mt-2" style={{ margin: "6px 0 0", fontStyle: "italic" }}>
-                    "{l.reason}"
+                    &ldquo;{l.reason}&rdquo;
                   </p>
                   <div className="row mt-3" style={{ gap: 8 }}>
                     <button
@@ -625,7 +622,7 @@ export default function AttendancePage() {
                     </p>
                   )}
                   <p className="text-xs tone-secondary mt-1" style={{ margin: "4px 0 0" }}>
-                    Reason: "{log.reason}"
+                    Reason: &ldquo;{log.reason}&rdquo;
                   </p>
                 </li>
               ))}

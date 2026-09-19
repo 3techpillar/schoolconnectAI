@@ -9,9 +9,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useAuth, type UserProfile, type Role } from "@/lib/providers/auth";
+import { useAuth, type Role } from "@/lib/providers/auth";
 import { useLeaves } from "@/lib/providers/leaves";
-import { apiFetch } from "@/lib/shared/api-client";
 import { toIsoDate } from "@/lib/shared/dates";
 
 export type StaffMark = "P" | "A" | "L" | "H";
@@ -135,8 +134,8 @@ function loadState(): StaffAttendanceState {
 }
 
 export function StaffAttendanceProvider({ children }: { children: ReactNode }) {
-  const { backend, ready: authReady, user, listUsers } = useAuth();
-  const { leaves, approvedLeaveDates } = useLeaves();
+  const { ready: authReady, listUsers } = useAuth();
+  const { leaves } = useLeaves();
   const [state, setState] = useState<StaffAttendanceState>(defaultState);
   const [ready, setReady] = useState(false);
   const day = todayKeyStr();
