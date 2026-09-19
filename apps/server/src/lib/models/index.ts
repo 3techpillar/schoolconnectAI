@@ -38,3 +38,6 @@ export * from "./erp/FeePayment";
 export * from "./erp/AcademicSession";
 export * from "./erp/BranchTransfer";
 export * from "./erp/ErpAuditLog";
+export * from "./learning/StudyMaterial";
+export * from "./learning/Doubt";
+

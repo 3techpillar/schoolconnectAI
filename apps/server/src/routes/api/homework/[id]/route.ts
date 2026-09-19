@@ -17,8 +17,17 @@ export async function PATCH(
 
   const body = (await req.json()) as {
     status?: "pending" | "in-progress" | "submitted" | "reviewed";
+    submission?: {
+      content?: string;
+      attachmentUrl?: string;
+    };
+    grading?: {
+      studentId: string;
+      grade?: string;
+      feedback?: string;
+      status?: "reviewed" | "resubmit";
+    };
   };
-  if (!body.status) return jsonError("status is required");
 
   const hw = await Homework.findById(id);
   if (!hw) return jsonError("Not found", 404);
@@ -30,7 +39,49 @@ export async function PATCH(
     return jsonError("Forbidden", 403);
   }
 
-  hw.status = body.status;
+  if (body.submission) {
+    const studentId = String(user._id);
+    const existingIdx = (hw.submissions || []).findIndex(
+      (s) => s.studentId === studentId,
+    );
+    const subData = {
+      studentId,
+      studentName: user.name,
+      submittedAtMs: Date.now(),
+      content: body.submission.content || "",
+      attachmentUrl: body.submission.attachmentUrl || "",
+      status: "submitted" as const,
+    };
+
+    if (existingIdx >= 0 && hw.submissions) {
+      hw.submissions[existingIdx] = {
+        ...hw.submissions[existingIdx],
+        ...subData,
+      };
+    } else {
+      hw.submissions.push(subData as never);
+    }
+    hw.status = "submitted";
+  } else if (body.grading && body.grading.studentId) {
+    const existingIdx = (hw.submissions || []).findIndex(
+      (s) => s.studentId === body.grading?.studentId,
+    );
+    if (existingIdx >= 0 && hw.submissions) {
+      if (body.grading.grade !== undefined) {
+        hw.submissions[existingIdx].grade = body.grading.grade;
+      }
+      if (body.grading.feedback !== undefined) {
+        hw.submissions[existingIdx].feedback = body.grading.feedback;
+      }
+      if (body.grading.status) {
+        hw.submissions[existingIdx].status = body.grading.status;
+      }
+    }
+    hw.status = "reviewed";
+  } else if (body.status) {
+    hw.status = body.status;
+  }
+
   await hw.save();
   return jsonOk({ homework: homeworkToClient(hw) });
 }
