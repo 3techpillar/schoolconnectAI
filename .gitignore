@@ -30,13 +30,11 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# env / local
-.env
-.env.*
+# env / local — ignore all env files with secrets
+.env*
 *.local
-.env*.local
 
-# keep shared env templates tracked
+# keep only safe templates tracked
 !.env.example
 !.env.sample
 
@@ -54,3 +52,9 @@ pnpm-debug.log*
 # typescript
 next-env.d.ts
 *.tsbuildinfo
+
+# local development notes
+SYSTEM_IMPLEMENTATION_NOTES.md
+*_NOTES.md
+*.notes.md
+

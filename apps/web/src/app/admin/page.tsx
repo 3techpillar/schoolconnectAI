@@ -12,7 +12,10 @@ import {
 } from "@/lib/providers/auth";
 import { useAdminData } from "@/lib/providers/admin-data";
 import { useTeacherClass } from "@/lib/providers/teacher-class";
+import { formatLeaveRange, useLeaves } from "@/lib/providers/leaves";
+import { useStaffAttendance } from "@/lib/providers/staff-attendance";
 import { EnrollmentDesk } from "@/components/admin/EnrollmentDesk";
+import { AcademicStructureDesk } from "@/components/admin/AcademicStructureDesk";
 import {
   ShieldCheck,
   GraduationCap,
@@ -26,6 +29,7 @@ import { canAccessErpConsole } from "@schoolconnect/shared";
 
 type Tab =
   | "overview"
+  | "academics"
   | "users"
   | "enroll"
   | "promotions"
@@ -76,6 +80,14 @@ export default function AdminPage() {
   const { user, listUsers, refreshUser } = useAuth();
   const admin = useAdminData();
   const teacherClass = useTeacherClass();
+  const { pendingTeacherLeaves, reviewLeave, leaves } = useLeaves();
+  const {
+    staffRoster,
+    todayMarks: staffTodayMarks,
+    setStaffMark,
+    markAllStaffPresent,
+    todayKey: staffTodayKey,
+  } = useStaffAttendance();
   const [tab, setTab] = useState<Tab>("overview");
   const [decisions, setDecisions] = useState<
     Record<string, "pass" | "fail">
@@ -163,6 +175,7 @@ export default function AdminPage() {
   const superMode = isSuperAdmin(user);
   const tabs: { id: Tab; label: string }[] = [
     { id: "overview", label: "Overview" },
+    { id: "academics", label: "Academics" },
     { id: "users", label: "Users" },
     { id: "enroll", label: "Enroll" },
     { id: "promotions", label: "Promote" },
@@ -350,6 +363,12 @@ export default function AdminPage() {
               </ul>
             </section>
           )}
+        </div>
+      )}
+
+      {tab === "academics" && (
+        <div className="mt-3">
+          <AcademicStructureDesk />
         </div>
       )}
 
@@ -589,12 +608,131 @@ export default function AdminPage() {
       {tab === "attendance" && (
         <div className="space-y mt-3">
           <section className="list-hero list-hero-blue" style={{ marginBottom: 0 }}>
-            <p className="list-hero-kicker">Teacher report</p>
+            <p className="list-hero-kicker">Teacher &amp; Staff report</p>
             <h2 className="list-hero-title">Leave &amp; attendance</h2>
             <p className="list-hero-body">
-              Approved leave auto-marks students as L on the class sheet. Month{" "}
-              {attendanceReport?.month || "—"}.
+              Approved student leave auto-marks L on class sheets. Teacher leaves are reviewed below.
             </p>
+          </section>
+
+          {pendingTeacherLeaves.length > 0 && (
+            <section className="card card-pad" style={{ borderLeft: "4px solid var(--primary)" }}>
+              <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                Pending Teacher Leave Approvals ({pendingTeacherLeaves.length})
+              </p>
+              <p className="text-11 muted" style={{ margin: "2px 0 10px" }}>
+                Review and approve or reject leave applications submitted by teaching staff.
+              </p>
+              <ul className="leave-list">
+                {pendingTeacherLeaves.map((l) => (
+                  <li key={l.id} className="card card-pad" style={{ background: "var(--bg)", marginBottom: 8 }}>
+                    <div className="row" style={{ justifyContent: "space-between" }}>
+                      <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                        {l.applicantName} {l.className ? `· Class ${l.className}` : "· Staff"}
+                      </p>
+                      <span className="leave-badge leave-pending">pending</span>
+                    </div>
+                    <p className="text-11 muted" style={{ margin: "4px 0 0" }}>
+                      {formatLeaveRange(l.fromDate, l.toDate)}
+                    </p>
+                    <p className="text-xs" style={{ margin: "6px 0 0" }}>
+                      Reason: {l.reason}
+                    </p>
+                    <div className="row mt-2" style={{ gap: 8 }}>
+                      <button
+                        type="button"
+                        className="btn-primary"
+                        style={{ width: "auto", padding: "0.45rem 0.9rem" }}
+                        onClick={() => {
+                          reviewLeave(l.id, "approved", user);
+                          setFlash(`Approved leave for ${l.applicantName}`);
+                        }}
+                      >
+                        Approve
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ width: "auto", padding: "0.45rem 0.9rem" }}
+                        onClick={() => {
+                          reviewLeave(l.id, "rejected", user);
+                          setFlash(`Rejected leave for ${l.applicantName}`);
+                        }}
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          <section className="card card-pad mb-3">
+            <div className="row" style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                  Mark Staff &amp; Teacher Attendance ({staffTodayKey})
+                </p>
+                <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+                  Principal &amp; Admin daily desk for teachers, bus attendants &amp; accountants.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="tone-primary font-semibold text-xs"
+                style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px" }}
+                onClick={() => markAllStaffPresent()}
+              >
+                Mark all Present
+              </button>
+            </div>
+
+            <ul className="roster-list mt-3">
+              {staffRoster.map((s) => {
+                const mark = staffTodayMarks[s.id];
+                const onLeave = leaves.some(
+                  (l) =>
+                    l.status === "approved" &&
+                    (l.applicantId === s.id ||
+                      l.studentName.toLowerCase() === s.name.toLowerCase()) &&
+                    l.fromDate <= staffTodayKey &&
+                    l.toDate >= staffTodayKey,
+                );
+                return (
+                  <li key={s.id} className="roster-card">
+                    <div className="row" style={{ gap: 10 }}>
+                      <div className="roster-avatar">{s.avatar}</div>
+                      <div className="grow">
+                        <p className="font-semibold text-sm" style={{ margin: 0 }}>
+                          {s.name}
+                        </p>
+                        <p className="text-11 muted" style={{ margin: "2px 0 0" }}>
+                          {ROLE_LABEL[s.role] || s.role} {s.className ? `· Class ${s.className}` : ""}
+                          {onLeave ? " · Approved leave today" : ""}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mark-row mt-2">
+                      {(["P", "A", "L", "H"] as const).map((m) => (
+                        <button
+                          key={m}
+                          type="button"
+                          className={`mark-btn mark-${m} ${
+                            mark === m || (onLeave && m === "L" && !mark)
+                              ? "active"
+                              : ""
+                          }`}
+                          onClick={() => setStaffMark(s.id, m)}
+                        >
+                          {m}
+                        </button>
+                      ))}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           </section>
 
           {attendanceLoading ? <LoadingBlock label="Loading report…" /> : null}

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { PhoneShell } from "@/components/shell/PhoneShell";
@@ -23,6 +24,29 @@ import {
   MessageCircle,
 } from "@/components/shell/Icons";
 import { EmptyState, LoadingBlock } from "@/components/shell/StatusUI";
+import { AskBuddyModal } from "@/components/student/AskBuddyModal";
+
+function getChannelAvatar(chat: { id: string; kind: string; title: string }) {
+  const lowerTitle = chat.title.toLowerCase();
+  if (chat.id === "ai-buddy" || lowerTitle.includes("buddy") || lowerTitle.includes("ai")) {
+    return "/assets/icons/icon_ai_buddy_3d.jpg";
+  }
+  if (chat.kind === "bus" || chat.id.includes("bus") || lowerTitle.includes("bus")) {
+    return "/assets/chats/avatar_bus_3d.jpg";
+  }
+  if (chat.kind === "class" || lowerTitle.includes("class")) {
+    return "/assets/chats/avatar_class_3d.jpg";
+  }
+  return "/assets/mascots/owl_graduate.jpg";
+}
+
+const STUDENT_QUICK_REPLIES = [
+  "I have a doubt! 🙋‍♂️",
+  "Homework submitted! ✅",
+  "Thank you teacher! 🙏",
+  "Can you share the notes? 📝",
+  "Got it, thank you! ⭐",
+];
 
 export default function ChatThreadPage() {
   const params = useParams<{ id: string }>();
@@ -38,7 +62,7 @@ export default function ChatThreadPage() {
     chatError,
     clearChatError,
   } = useSchoolData();
-  const { toggleReaction, reactions, completeMission } = useStudentEngage();
+  const { toggleReaction, reactions, completeMission, awardXp } = useStudentEngage();
 
   const chat = chats.find((c) => c.id === chatId);
   const messages = getMessages(chatId);
@@ -48,8 +72,11 @@ export default function ChatThreadPage() {
   const [due, setDue] = useState(addDaysIso(toIsoDate(), 2));
   const [reactFor, setReactFor] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [isBuddyOpen, setIsBuddyOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const teacher = canPostAsTeacher(user);
+
+  const firstName = user?.childName?.split(" ")[0] || user?.name?.split(" ")[0] || "Friend";
 
   useEffect(() => {
     if (chatId) {
@@ -65,7 +92,7 @@ export default function ChatThreadPage() {
   if (!ready || !user) {
     return (
       <PhoneShell title="Chat" subtitle="Loading" hideNav>
-        <LoadingBlock label="Opening chat…" />
+        <LoadingBlock label="Opening chat conversation…" />
       </PhoneShell>
     );
   }
@@ -81,10 +108,12 @@ export default function ChatThreadPage() {
     );
   }
 
-  const onSend = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!text.trim() || sending) return;
-    const payload = text;
+  const channelAvatar = getChannelAvatar(chat);
+
+  const onSend = async (e?: React.FormEvent, customText?: string) => {
+    if (e) e.preventDefault();
+    const payload = customText || text;
+    if (!payload.trim() || sending) return;
     setSending(true);
     clearChatError();
     const ok = await sendMessage({
@@ -105,6 +134,7 @@ export default function ChatThreadPage() {
     if (ok) {
       setText("");
       setKind("text");
+      awardXp(5);
     }
   };
 
@@ -116,18 +146,70 @@ export default function ChatThreadPage() {
       subtitle={chat.subtitle}
       title={chat.title}
       rightSlot={
-        <Link href="/chats" className="icon-btn on-primary" aria-label="Back">
-          <ArrowLeft size={18} />
-        </Link>
+        <div className="row" style={{ gap: 6, alignItems: "center" }}>
+          <button
+            type="button"
+            className="icon-btn on-primary"
+            onClick={() => setIsBuddyOpen(true)}
+            title="Ask AI Study Buddy"
+            aria-label="Ask Buddy"
+          >
+            <Sparkles size={16} />
+          </button>
+          <Link href="/chats" className="icon-btn on-primary" aria-label="Back">
+            <ArrowLeft size={18} />
+          </Link>
+        </div>
       }
     >
+      {/* 3D Channel Mini Bar */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          padding: "8px 12px",
+          background: "rgba(255, 255, 255, 0.8)",
+          backdropFilter: "blur(10px)",
+          borderRadius: 16,
+          border: "1.5px solid #EEF2FF",
+          margin: "8px 0 10px",
+          boxShadow: "0 4px 14px -3px rgba(99, 102, 241, 0.08)",
+        }}
+      >
+        <div className="wa-thread-avatar-mini" style={{ width: 40, height: 40 }}>
+          <Image
+            src={channelAvatar}
+            alt={chat.title}
+            width={40}
+            height={40}
+          />
+        </div>
+        <div className="grow" style={{ minWidth: 0 }}>
+          <p className="font-semibold text-13 truncate" style={{ margin: 0, color: "#1E1B4B" }}>
+            {chat.title}
+          </p>
+          <p className="text-11 muted truncate" style={{ margin: "2px 0 0" }}>
+            Active · Class Community
+          </p>
+        </div>
+        <button
+          type="button"
+          className="hw-solve-ai-btn"
+          onClick={() => setIsBuddyOpen(true)}
+          style={{ padding: "4px 9px", fontSize: "0.7rem", borderRadius: 999 }}
+        >
+          <Sparkles size={12} /> Ask Buddy
+        </button>
+      </div>
+
       <div className="wa-thread-canvas">
         {messages.length === 0 && (
           <EmptyState
             icon={MessageCircle}
             tone="teal"
             title="No messages yet"
-            body="Say hello to start the conversation."
+            body="Say hello or ask a question to start the discussion!"
           />
         )}
         {messages.map((m) => {
@@ -154,16 +236,16 @@ export default function ChatThreadPage() {
                 )}
                 {m.kind === "homework" && (
                   <div className="wa-card-tag hw">
-                    <BookOpen size={12} /> Homework
+                    <BookOpen size={12} /> Homework Quest
                     {m.meta?.subject ? ` · ${m.meta.subject}` : ""}
                     {m.meta?.due
-                      ? ` · Submit by ${/^\d{4}-\d{2}-\d{2}$/.test(m.meta.due) ? m.meta.due : m.meta.due}`
+                      ? ` · Due ${m.meta.due}`
                       : ""}
                   </div>
                 )}
                 {m.kind === "progress" && (
                   <div className="wa-card-tag progress">
-                    <Sparkles size={12} /> Progress
+                    <Sparkles size={12} /> Progress Milestone
                     {m.meta?.score ? ` · ${m.meta.score}` : ""}
                   </div>
                 )}
@@ -251,6 +333,20 @@ export default function ChatThreadPage() {
         </p>
       )}
 
+      {/* Student Quick-Prompt Suggestions */}
+      <div className="wa-quick-prompt-carousel">
+        {STUDENT_QUICK_REPLIES.map((prompt) => (
+          <button
+            key={prompt}
+            type="button"
+            className="wa-quick-prompt-chip"
+            onClick={() => onSend(undefined, prompt)}
+          >
+            {prompt}
+          </button>
+        ))}
+      </div>
+
       {/* Floating Glassmorphic Composer */}
       <form className="wa-composer-capsule" onSubmit={onSend}>
         {teacher && (
@@ -305,10 +401,10 @@ export default function ChatThreadPage() {
               kind === "daily_activity"
                 ? "Share today’s class activity…"
                 : kind === "homework"
-                  ? "Describe homework…"
+                  ? "Describe homework quest…"
                   : kind === "progress"
-                    ? "Share progress note…"
-                    : "Type a message…"
+                    ? "Share progress milestone…"
+                    : "Type a message or ask a doubt…"
             }
             disabled={sending}
           />
@@ -327,6 +423,13 @@ export default function ChatThreadPage() {
           </p>
         )}
       </form>
+
+      {/* AI Study Buddy Modal Drawer */}
+      <AskBuddyModal
+        isOpen={isBuddyOpen}
+        onClose={() => setIsBuddyOpen(false)}
+        studentName={firstName}
+      />
     </PhoneShell>
   );
 }

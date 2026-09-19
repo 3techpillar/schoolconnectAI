@@ -21,8 +21,11 @@ app.use("/api/auth/otp/send", otpRateLimiter);
 app.use("/api/auth/otp/verify", otpRateLimiter);
 app.use("/api", apiRateLimiter);
 
-// Configure CORS
-const origins = process.env.CORS_ORIGINS?.split(",").map((s) => s.trim()) || ["http://localhost:3000"];
+// Configure CORS - Tells the backend to accept requests from your local frontend
+const origins = process.env.CORS_ORIGINS?.split(",").map((s) => s.trim()) || [
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
 app.use(
   cors({
     origin: (origin, cb) => {
