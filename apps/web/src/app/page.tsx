@@ -24,7 +24,6 @@ import {
   CalendarCheck,
   Wallet,
   Megaphone,
-  Bus,
   MessageCircle,
   ArrowRight,
   CheckCircle2,
@@ -32,7 +31,6 @@ import {
   Sparkles,
   GraduationCap,
   ShieldCheck,
-  FileText,
 } from "@/components/shell/Icons";
 import Image from "next/image";
 import { AdventureWorldView } from "@/components/student/AdventureWorldView";
@@ -43,8 +41,7 @@ export default function HomePage() {
   const { user, ready, backend } = useAuth();
   const router = useRouter();
   const engage = useStudentEngage();
-  const { canPostAsTeacher, homework, unreadChats, ready: schoolReady } =
-    useSchoolData();
+  const { canPostAsTeacher, homework, unreadChats } = useSchoolData();
   const teacherClass = useTeacherClass();
   const admin = useAdminData();
   const bus = useBusTrack();
@@ -68,10 +65,10 @@ export default function HomePage() {
     }>
   >([]);
   const [hwStats, setHwStats] = useState({ label: "0", hint: "—" });
-  const [homeExtraReady, setHomeExtraReady] = useState(false);
   const [viewMode, setViewMode] = useState<"auto" | "adventure" | "desk">("auto");
   const [isBuddyOpen, setIsBuddyOpen] = useState(false);
   const [rewardToast, setRewardToast] = useState<string | null>(null);
+  const [, setHomeExtraReady] = useState(false);
 
   const triggerReward = (pts: number, msg: string) => {
     engage.awardXp?.(pts, msg);
@@ -96,7 +93,6 @@ export default function HomePage() {
     if (!backend || !user?.schoolId) {
       setAttendance({ label: "—", hint: !user?.schoolId ? "No school" : "Offline" });
       setFeed([]);
-      setHomeExtraReady(true);
       return;
     }
 
@@ -209,16 +205,10 @@ export default function HomePage() {
   const metaLine = [user.school, user.className && `Class ${user.className}`]
     .filter(Boolean)
     .join(" · ");
-  const missionsLeft = engage.missions.filter((m) => !m.done).length;
   const pendingHw = homework.filter(
     (h) => h.status === "pending" || h.status === "in-progress",
   ).length;
   const hwLabel = backend ? hwStats.label : String(homework.length);
-  const hwHint = backend
-    ? hwStats.hint
-    : pendingHw
-      ? `${pendingHw} pending`
-      : "All clear";
   const unmarked =
     teacherClass.roster.length - teacherClass.markedCount;
 

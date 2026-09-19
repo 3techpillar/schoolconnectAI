@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, type ReactNode } from "react";
-import { useAuth, isSchoolAdmin } from "@/lib/providers/auth";
+import { useAuth } from "@/lib/providers/auth";
 import { isSchoolAdminRole, isFamilyRole } from "@schoolconnect/shared";
 import {
   isLimitedAccessPath,
@@ -60,7 +60,7 @@ export function PhoneShell({
   const router = useRouter();
   const isPrimary = headerAccent === "primary";
   const { user, ready, backend } = useAuth();
-  const { unreadNotifications, unreadChats, canPostAsTeacher } = useSchoolData();
+  const { unreadNotifications, unreadChats } = useSchoolData();
 
   const isAllowed = canAccessRoute(user?.role, pathname);
 

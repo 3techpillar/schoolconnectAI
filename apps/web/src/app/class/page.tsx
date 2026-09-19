@@ -12,7 +12,6 @@ import {
   BookOpen,
   CalendarCheck,
   MessageCircle,
-  Megaphone,
   ArrowRight,
 } from "@/components/shell/Icons";
 import { AppIcon } from "@/components/shell/AppIcon";

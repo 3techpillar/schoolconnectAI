@@ -47,10 +47,6 @@ const QUOTES = [
 ];
 
 export function MascotCompanion({
-  streak = 7,
-  xp = 1250,
-  level = 7,
-  studentName = "Aarav",
   onOpenBuddyChat,
   variant = "card",
 }: MascotCompanionProps) {

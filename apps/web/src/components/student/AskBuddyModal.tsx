@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 
 interface AskBuddyModalProps {
@@ -43,58 +43,55 @@ export function AskBuddyModal({
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const handleSend = useCallback(
+    (userText?: string) => {
+      const textToSend = userText || input;
+      if (!textToSend.trim() || loading) return;
+
+      const userMsg: Message = {
+        id: `u-${Date.now()}`,
+        sender: "student",
+        text: textToSend.trim(),
+        timestamp: "Just now",
+      };
+
+      setMessages((prev) => [...prev, userMsg]);
+      if (!userText) setInput("");
+      setLoading(true);
+
+      setTimeout(() => {
+        const lower = textToSend.toLowerCase();
+        let botReply = `Great curiosity, ${studentName || "student"}! 🌟 Learning about "${textToSend}" is a great adventure. Remember: break the problem into bite-sized steps!`;
+        if (lower.includes("fraction") || lower.includes("pizza")) {
+          botReply = "🍕 Imagine a whole pizza cut into 4 equal slices! If you eat 1 slice, you ate 1 out of 4, written as 1/4. The top number (numerator) is what you took, and the bottom (denominator) is the total slices!";
+        } else if (lower.includes("lightning") || lower.includes("thunder")) {
+          botReply = "⚡ Light travels WAY faster than sound (300,000 km/s vs 340 m/s)! That's why you see the flash instantly, but the thunder roar takes a few seconds!";
+        } else if (lower.includes("quiz")) {
+          botReply = "🎯 Here's a quick brain-teaser: If a triangle has angles of 90° and 45°, what is the 3rd angle? (Hint: All angles add to 180°!)";
+        }
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `b-${Date.now()}`,
+            sender: "buddy",
+            text: botReply,
+            timestamp: "Just now",
+          },
+        ]);
+        setLoading(false);
+        if (onRewardXp) onRewardXp(10);
+      }, 1000);
+    },
+    [input, loading, studentName, onRewardXp],
+  );
+
   useEffect(() => {
     if (isOpen && initialQuery) {
       handleSend(initialQuery);
     }
-  }, [isOpen, initialQuery]);
+  }, [isOpen, initialQuery, handleSend]);
 
   if (!isOpen) return null;
-
-  const handleSend = (userText?: string) => {
-    const textToSend = userText || input;
-    if (!textToSend.trim() || loading) return;
-
-    const userMsg: Message = {
-      id: `u-${Date.now()}`,
-      sender: "student",
-      text: textToSend,
-      timestamp: "Just now",
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setInput("");
-    setLoading(true);
-
-    setTimeout(() => {
-      let reply = "";
-      const lower = textToSend.toLowerCase();
-      if (lower.includes("fraction") || lower.includes("pizza")) {
-        reply =
-          "🍕 Imagine a whole pizza cut into 4 equal slices! If you eat 1 slice, you ate 1 out of 4, written as 1/4. The top number (numerator) is what you took, and the bottom (denominator) is the total slices! Easy peasy!";
-      } else if (lower.includes("lightning") || lower.includes("thunder")) {
-        reply =
-          "⚡ Light travels WAY faster than sound (300,000 km/s vs 340 m/s)! That's why you see the flash instantly, but the thunder roar takes a few seconds to reach your ears!";
-      } else if (lower.includes("quiz")) {
-        reply =
-          "🎯 Here's a quick brain-teaser: If a triangle has angles of 90° and 45°, what is the 3rd angle? (Hint: All angles add to 180°!)";
-      } else {
-        reply = `Great curiosity, ${studentName}! 🌟 Learning about "${textToSend}" is a great adventure. Remember: break the problem into bite-sized steps, and you'll solve it in no time!`;
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `b-${Date.now()}`,
-          sender: "buddy",
-          text: reply,
-          timestamp: "Just now",
-        },
-      ]);
-      setLoading(false);
-      if (onRewardXp) onRewardXp(10);
-    }, 900);
-  };
 
   return (
     <div className="buddy-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
